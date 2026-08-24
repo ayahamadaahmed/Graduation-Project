@@ -1,0 +1,21 @@
+﻿id,expected,intent
+real_001,عايز أحجز كشف جلدية,book_appointment
+real_002,عايزة أحجز عند دكتور عيون,book_appointment
+real_003,محتاج ميعاد كشف باطنة بكرة,book_appointment
+real_004,عايز أحجز النهارده الساعة خمسة,book_appointment
+real_005,ممكن أحجز كشف أطفال,book_appointment
+real_006,عايز ألغي الحجز,cancel_appointment
+real_007,ممكن ألغي الميعاد بتاعي,cancel_appointment
+real_008,عايزة أكنسل الحجز,cancel_appointment
+real_009,محتاج ألغي appointment بتاعي,cancel_appointment
+real_010,عايز أغير ميعاد الدكتور,reschedule_appointment
+real_011,ممكن أقدم الميعاد,reschedule_appointment
+real_012,عايز أأجل الكشف لبكرة,reschedule_appointment
+real_013,ممكن أعمل reschedule للappointment,reschedule_appointment
+real_014,عايز أعرف الحجز بتاعي,get_booking
+real_015,عندي حجز بكرة ولا لأ,get_booking
+real_016,عايز دكتور جلدية,ask_doctor
+real_017,عايز دكتور عيون,ask_doctor
+real_018,ممكن دكتور باطنة,ask_doctor
+real_019,عايز appointment بكرة,book_appointment
+real_020,ممكن أعمل follow up مع الدكتور,general_question

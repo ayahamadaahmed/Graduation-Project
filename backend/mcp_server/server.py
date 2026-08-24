@@ -1,0 +1,564 @@
+import re
+
+from datetime import date
+
+from typing import Literal
+
+
+from uuid import UUID
+
+from mcp.server.fastmcp import (
+    Context,
+    FastMCP,
+)
+
+from mcp_server.tools.appointments import (
+    cancel_booking as cancel_booking_impl,
+    create_booking as create_booking_impl,
+    lookup_booking as lookup_booking_impl,
+    reschedule_booking as reschedule_booking_impl,
+    search_patient_bookings as search_patient_bookings_impl,
+
+)
+
+from mcp_server.tools.catalog import (
+    get_provider_info as get_provider_info_impl,
+    list_available_slots as list_available_slots_impl,
+    list_doctors as list_doctors_impl,
+    list_services as list_services_impl,
+    list_specialties as list_specialties_impl,
+)
+
+from mcp_server.tools.patients import (
+    lookup_patient as lookup_patient_impl,
+    resolve_patient as resolve_patient_impl,
+)
+
+mcp = FastMCP(
+    "MedMind Booking MCP",
+    host="127.0.0.1",
+    port=9000,
+)
+
+TENANT_PATTERN = re.compile(
+    r"^[A-Za-z0-9]"
+    r"[A-Za-z0-9._-]{0,63}$"
+)
+
+
+def _require_request_tenant_id(
+    context: Context,
+) -> str:
+    """
+    Extract the tenant identity from the current
+    Streamable HTTP MCP request.
+
+    Fail closed:
+    MCP tools must never silently fall back
+    to a global/default tenant.
+    """
+
+    request_context = (
+        context.request_context
+    )
+
+    request = getattr(
+        request_context,
+        "request",
+        None,
+    )
+
+    if request is None:
+
+        raise RuntimeError(
+            "MCP request does not contain "
+            "HTTP request context."
+        )
+
+    headers = getattr(
+        request,
+        "headers",
+        None,
+    )
+
+    if headers is None:
+
+        raise RuntimeError(
+            "MCP request does not contain "
+            "HTTP headers."
+        )
+
+    raw_tenant_id = (
+        headers.get(
+            "x-tenant-id"
+        )
+    )
+
+    if not raw_tenant_id:
+
+        raise RuntimeError(
+            "Missing X-Tenant-ID on MCP request."
+        )
+
+    tenant_id = (
+        str(
+            raw_tenant_id
+        )
+        .strip()
+    )
+
+    if not TENANT_PATTERN.fullmatch(
+        tenant_id
+    ):
+
+        raise RuntimeError(
+            "Invalid X-Tenant-ID "
+            "on MCP request."
+        )
+
+    return tenant_id
+
+
+def _request_tenant_id(
+    context: Context,
+) -> str | None:
+    """
+    Read X-Tenant-ID from the current
+    Streamable HTTP MCP request.
+
+    Diagnostic only for now.
+    """
+
+    request_context = (
+        context.request_context
+    )
+
+    request = getattr(
+        request_context,
+        "request",
+        None,
+    )
+
+    if request is None:
+
+        return None
+
+    headers = getattr(
+        request,
+        "headers",
+        None,
+    )
+
+    if headers is None:
+
+        return None
+
+    tenant_id = (
+        headers.get(
+            "x-tenant-id"
+        )
+        or
+        headers.get(
+            "X-Tenant-ID"
+        )
+    )
+
+    if not tenant_id:
+
+        return None
+
+    return str(
+        tenant_id
+    ).strip()
+
+
+@mcp.tool()
+async def get_provider_info(
+    context: Context,
+):
+    """
+    Get the current healthcare provider details.
+    """
+
+    tenant_id = (
+        _require_request_tenant_id(
+            context
+        )
+    )
+
+    return await get_provider_info_impl(
+        tenant_id=tenant_id
+    )
+
+
+@mcp.tool()
+async def resolve_patient(
+    context: Context,
+    national_id: str,
+    patient_name: str,
+    phone: str,
+    preferred_language: Literal[
+        "ar",
+        "en",
+    ] = "ar",
+    channel: Literal[
+        "web",
+        "mobile",
+        "voice",
+        "whatsapp",
+    ] = "web",
+):
+    """
+    Resolve or create a patient before booking.
+    """
+
+    tenant_id = (
+        _require_request_tenant_id(
+            context
+        )
+    )
+
+    return await resolve_patient_impl(
+        tenant_id=tenant_id,
+
+        national_id=national_id,
+
+        patient_name=(
+            patient_name
+        ),
+
+        phone=phone,
+
+        preferred_language=(
+            preferred_language
+        ),
+
+        channel=channel,
+    )
+
+@mcp.tool()
+async def lookup_patient(
+    context: Context,
+    national_id: str,
+    language: Literal[
+        "ar",
+        "en",
+    ] = "ar",
+):
+    tenant_id = (
+        _require_request_tenant_id(
+            context
+        )
+    )
+
+    return await lookup_patient_impl(
+        tenant_id=tenant_id,
+        national_id=national_id,
+        language=language,
+    )
+
+@mcp.tool()
+async def list_specialties(
+    context: Context,
+):
+    """
+    List medical specialties
+    for the current healthcare provider.
+    """
+
+    tenant_id = (
+        _require_request_tenant_id(
+            context
+        )
+    )
+
+    return await list_specialties_impl(
+        tenant_id=tenant_id,
+    )
+
+
+@mcp.tool()
+async def list_doctors(
+    context: Context,
+    specialty_id: UUID | None = None,
+    branch_id: UUID | None = None,
+    limit: int = 100,
+):
+    """
+    List doctors for the current provider.
+    """
+
+    tenant_id = (
+        _require_request_tenant_id(
+            context
+        )
+    )
+
+    return await list_doctors_impl(
+        tenant_id=tenant_id,
+
+        specialty_id=(
+            specialty_id
+        ),
+
+        branch_id=(
+            branch_id
+        ),
+
+        limit=limit,
+    )
+
+
+@mcp.tool()
+async def list_services(
+    context: Context,
+    service_type: str | None = None,
+    doctor_id: UUID | None = None,
+    limit: int = 100,
+):
+    """
+    List active healthcare services.
+
+    Can filter services by doctor so the
+    booking agent receives only services
+    that the selected doctor can provide.
+    """
+
+    tenant_id = (
+        _require_request_tenant_id(
+            context
+        )
+    )
+
+    return await list_services_impl(
+        tenant_id=tenant_id,
+        service_type=service_type,
+        doctor_id=doctor_id,
+        limit=limit,
+    )
+
+
+@mcp.tool()
+async def list_available_slots(
+    context: Context,
+    slot_date: date,
+    doctor_id: UUID | None = None,
+    branch_id: UUID | None = None,
+    limit: int = 100,
+):
+    """
+    List available appointment slots.
+    """
+
+    tenant_id = (
+        _require_request_tenant_id(
+            context
+        )
+    )
+
+    return await list_available_slots_impl(
+        tenant_id=tenant_id,
+
+        slot_date=slot_date,
+
+        doctor_id=doctor_id,
+
+        branch_id=branch_id,
+
+        limit=limit,
+    )
+
+@mcp.tool()
+async def create_booking(
+    context: Context,
+    national_id: str,
+    slot_id: UUID,
+    service_id: UUID,
+    idempotency_key: str,
+    channel: Literal[
+        "web",
+        "mobile",
+        "voice",
+        "whatsapp",
+    ] = "web",
+    notes: str | None = None,
+    session_reference: str | None = None,
+):
+    """
+    Create a healthcare appointment.
+
+    Reuse idempotency_key for retries
+    of the same logical write.
+    """
+
+    tenant_id = (
+        _require_request_tenant_id(
+            context
+        )
+    )
+
+    return await create_booking_impl(
+        tenant_id=tenant_id,
+
+        national_id=national_id,
+
+        slot_id=slot_id,
+
+        service_id=service_id,
+
+        idempotency_key=(
+            idempotency_key
+        ),
+
+        channel=channel,
+
+        notes=notes,
+
+        session_reference=(
+            session_reference
+        ),
+    )
+
+@mcp.tool()
+async def search_patient_bookings(
+    context: Context,
+    national_id: str,
+    include_cancelled: bool = False,
+    limit: int = 20,
+):
+    """
+    List appointments belonging to a patient.
+    """
+
+    tenant_id = (
+        _require_request_tenant_id(
+            context
+        )
+    )
+
+    return await search_patient_bookings_impl(
+        tenant_id=tenant_id,
+
+        national_id=national_id,
+
+        include_cancelled=(
+            include_cancelled
+        ),
+
+        limit=limit,
+    )
+
+
+@mcp.tool()
+async def lookup_booking(
+    context: Context,
+    national_id: str,
+    appointment_reference: str,
+):
+    """
+    Secure appointment lookup.
+    """
+
+    tenant_id = (
+        _require_request_tenant_id(
+            context
+        )
+    )
+
+    return await lookup_booking_impl(
+        tenant_id=tenant_id,
+
+        national_id=national_id,
+
+        appointment_reference=(
+            appointment_reference
+        ),
+    )
+
+
+@mcp.tool()
+async def cancel_booking(
+    context: Context,
+    national_id: str,
+    appointment_reference: str,
+    idempotency_key: str,
+    reason: str | None = None,
+    session_reference: str | None = None,
+):
+    """
+    Cancel an appointment.
+    """
+
+    tenant_id = (
+        _require_request_tenant_id(
+            context
+        )
+    )
+
+    return await cancel_booking_impl(
+        tenant_id=tenant_id,
+
+        national_id=national_id,
+
+        appointment_reference=(
+            appointment_reference
+        ),
+
+        idempotency_key=(
+            idempotency_key
+        ),
+
+        reason=reason,
+
+        session_reference=(
+            session_reference
+        ),
+    )
+
+
+@mcp.tool()
+async def reschedule_booking(
+    context: Context,
+    national_id: str,
+    appointment_reference: str,
+    new_slot_id: UUID,
+    idempotency_key: str,
+    reason: str | None = None,
+    session_reference: str | None = None,
+):
+    """
+    Reschedule an appointment.
+    """
+
+    tenant_id = (
+        _require_request_tenant_id(
+            context
+        )
+    )
+
+    return await reschedule_booking_impl(
+        tenant_id=tenant_id,
+
+        national_id=national_id,
+
+        appointment_reference=(
+            appointment_reference
+        ),
+
+        new_slot_id=new_slot_id,
+
+        idempotency_key=(
+            idempotency_key
+        ),
+
+        reason=reason,
+
+        session_reference=(
+            session_reference
+        ),
+    )
+
+if __name__ == "__main__":
+    mcp.run(
+        transport="streamable-http"
+    )
