@@ -1,0 +1,60 @@
+.env
+.env.*
+!.env.example
+
+__pycache__/
+*.py[cod]
+
+.pytest_cache/
+.pytest_cache/**
+
+.venv/
+venv/
+env/
+
+.vscode/
+.idea/
+
+*.log
+
+# Python generated files
+*.egg-info/
+.pytest_cache.zip
+*.sqlite-shm
+*.sqlite-wal
+
+# Local database/data backups
+backups/
+
+# ============================================================
+# MedMind Voice generated artifacts
+# ============================================================
+artifacts/voice_audio/**/*.wav
+artifacts/voice_audio/**/*.pcm
+artifacts/voice_audio/**/*.mp3
+
+
+# ============================================================
+# Generated AI model artifacts
+# ============================================================
+artifacts/models/arabic_benchmark/
+
+# Old voice debug location
+artifacts/voice_debug/
+
+# Generated voice media
+artifacts/voice_audio/**/*.wav
+artifacts/voice_audio/**/*.pcm
+artifacts/voice_audio/**/*.mp3
+
+# Python / logs
+__pycache__/
+*.pyc
+*.log
+
+
+# Generated NLU benchmark outputs
+artifacts/nlu_benchmark/
+
+
+data/langgraph/*.sqlite
