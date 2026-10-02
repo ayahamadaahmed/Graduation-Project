@@ -1,0 +1,17 @@
+﻿[
+    {
+        "id":  "5eb0e74d-5cb6-4b16-b91e-b40344250d68",
+        "tenant_key":  "clinic-001",
+        "name":  "Dr. Maher Mahmoud Dermatology Clinic",
+        "slug":  "dr-maher-mahmoud-dermatology-clinic",
+        "org_type":  "clinic",
+        "verification_status":  "verified",
+        "default_language":  "ar",
+        "timezone":  "Africa/Cairo",
+        "currency_code":  "EGP",
+        "phone":  "+201000000000",
+        "email":  "drmaher@medmind.local",
+        "address":  "Cairo, Egypt",
+        "is_active":  true
+    }
+]

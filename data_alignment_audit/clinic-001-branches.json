@@ -1,0 +1,30 @@
+﻿[
+    {
+        "id":  "68294c46-f44b-5b80-a811-7f5313a179dd",
+        "provider_id":  "5eb0e74d-5cb6-4b16-b91e-b40344250d68",
+        "code":  "CMC",
+        "name_ar":  "Ù\u0085Ø±ÙØ² Ø§ÙÙØ§ÙØ±Ø© Ø§ÙØ·Ø¨Ù",
+        "name_en":  "Cairo Medical Center",
+        "address_ar":  "Ø§ÙÙØ§ÙØ±Ø©Ø Ù\u0085ØµØ±",
+        "address_en":  "Cairo Medical Center, Cairo, Egypt",
+        "governorate":  "Cairo",
+        "phone":  "+201000000000",
+        "whatsapp":  null,
+        "timezone":  "Africa/Cairo",
+        "is_active":  true
+    },
+    {
+        "id":  "4106b6d3-77a6-5f82-8161-7b87e24c2078",
+        "provider_id":  "5eb0e74d-5cb6-4b16-b91e-b40344250d68",
+        "code":  "SERIDAR",
+        "name_ar":  "Ø¨Ø±Ø¬ Ø³ÙØ±ÙØ¯Ø§Ø± - Ø§ÙØ¯ÙÙ",
+        "name_en":  "Tower Of Seridar - Dokki",
+        "address_ar":  "Ø§ÙØ¯ÙÙØ Ø§ÙÙØ§ÙØ±Ø©Ø Ù\u0085ØµØ±",
+        "address_en":  "Tower Of Seridar, Dokki, Cairo, Egypt",
+        "governorate":  "Cairo",
+        "phone":  "+201000000000",
+        "whatsapp":  null,
+        "timezone":  "Africa/Cairo",
+        "is_active":  true
+    }
+]

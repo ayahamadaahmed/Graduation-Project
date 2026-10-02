@@ -1,0 +1,16 @@
+﻿[
+    {
+        "id":  "0c84538e-bac9-5a40-bf70-552360ab8cc8",
+        "provider_id":  "5eb0e74d-5cb6-4b16-b91e-b40344250d68",
+        "code":  "SKIN_CONSULT",
+        "name_ar":  "ÙØ´Ù Ø¬ÙØ¯ÙØ©",
+        "name_en":  "Dermatology Consultation",
+        "duration_minutes":  30,
+        "price":  null,
+        "service_type":  "consultation",
+        "requires_preparation":  false,
+        "preparation_instructions_ar":  null,
+        "preparation_instructions_en":  null,
+        "is_active":  true
+    }
+]

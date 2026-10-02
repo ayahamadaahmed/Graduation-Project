@@ -1,0 +1,51 @@
+{
+  "quality_gate": "PASS",
+  "train_gold_scenarios": 37,
+  "augmented_rows": 370,
+  "augmented_scenarios": 37,
+  "variations_per_scenario": 10,
+  "validation_gold_scenarios": 22,
+  "test_gold_scenarios": 22,
+  "split_leakage": 0,
+  "duplicate_variation_ids": 0,
+  "duplicate_messages_within_scenario": 0,
+  "query_mismatches": 0,
+  "gold_message_reuse_count": 0,
+  "rows_with_arguments": 190,
+  "status": {
+    "selected": 350,
+    "ambiguous": 20
+  },
+  "capabilities": {
+    "appointment.cancel": 50,
+    "appointment.create": 130,
+    "appointment.reschedule": 50,
+    "appointment.search": 30,
+    "human_support.transfer": 10,
+    "knowledge.search": 10,
+    "provider.get_policy": 10,
+    "provider.get_services": 10,
+    "provider.get_slots": 30,
+    "provider.get_working_hours": 10,
+    "provider.search_doctors": 10
+  },
+  "confirmation": {
+    "unknown": 350,
+    "yes": 10,
+    "no": 10
+  },
+  "ambiguity": {
+    "None": 350,
+    "needs_clarification": 10,
+    "candidate_miss": 10
+  },
+  "corrections": {
+    "None": 310,
+    "patient_name": 10,
+    "phone": 10,
+    "doctor": 10,
+    "schedule": 10,
+    "national_id": 10,
+    "time": 10
+  }
+}

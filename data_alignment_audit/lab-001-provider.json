@@ -1,0 +1,17 @@
+﻿[
+    {
+        "id":  "4b1c424f-05ac-5f74-98f9-7b6ca384c97b",
+        "tenant_key":  "lab-001",
+        "name":  "Qwik Medical Labs",
+        "slug":  "qwik-medical-labs",
+        "org_type":  "diagnostic_lab",
+        "verification_status":  "verified",
+        "default_language":  "ar",
+        "timezone":  "Africa/Cairo",
+        "currency_code":  "EGP",
+        "phone":  "+201200000000",
+        "email":  "labs@qwik.local",
+        "address":  "Cairo, Egypt",
+        "is_active":  true
+    }
+]

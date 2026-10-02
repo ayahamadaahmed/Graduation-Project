@@ -1,0 +1,102 @@
+﻿[
+    {
+        "id":  "f6ffdcd8-43b8-5349-8910-c7bee938bf70",
+        "provider_id":  "127990e5-d917-5e17-aa87-eebccf103b3b",
+        "code":  "CARDIOLOGY",
+        "name_ar":  "Ø£Ù\u0085Ø±Ø§Ø¶ Ø§ÙÙÙØ¨",
+        "name_en":  "Cardiology",
+        "description_ar":  "ÙØ³Ù\u0085 Ø§ÙÙÙØ¨ Ø¨Ø§ÙÙ\u0085Ø³ØªØ´ÙÙ",
+        "description_en":  "Hospital cardiology department",
+        "is_active":  true
+    },
+    {
+        "id":  "8d4939f1-a5b1-5e3f-ba1f-b748229f6817",
+        "provider_id":  "127990e5-d917-5e17-aa87-eebccf103b3b",
+        "code":  "ENT",
+        "name_ar":  "Ø§ÙØ£ÙÙ ÙØ§ÙØ£Ø°Ù ÙØ§ÙØ­ÙØ¬Ø±Ø©",
+        "name_en":  "Ear, Nose and Throat",
+        "description_ar":  "ÙØ³Ù\u0085 Ø§ÙØ£ÙÙ ÙØ§ÙØ£Ø°Ù ÙØ§ÙØ­ÙØ¬Ø±Ø©",
+        "description_en":  "ENT department",
+        "is_active":  true
+    },
+    {
+        "id":  "e0501ffa-8cbe-5db0-bbf2-22e535294c00",
+        "provider_id":  "127990e5-d917-5e17-aa87-eebccf103b3b",
+        "code":  "GENERAL_SURGERY",
+        "name_ar":  "Ø§ÙØ¬Ø±Ø§Ø­Ø© Ø§ÙØ¹Ø§Ù\u0085Ø©",
+        "name_en":  "General Surgery",
+        "description_ar":  "ÙØ³Ù\u0085 Ø§ÙØ¬Ø±Ø§Ø­Ø© Ø§ÙØ¹Ø§Ù\u0085Ø©",
+        "description_en":  "General surgery department",
+        "is_active":  true
+    },
+    {
+        "id":  "3efde57f-a693-5971-bd16-0462ebf09454",
+        "provider_id":  "127990e5-d917-5e17-aa87-eebccf103b3b",
+        "code":  "INTERNAL_MEDICINE",
+        "name_ar":  "Ø§ÙØ¨Ø§Ø·ÙØ© Ø§ÙØ¹Ø§Ù\u0085Ø©",
+        "name_en":  "Internal Medicine",
+        "description_ar":  "ÙØ³Ù\u0085 Ø§ÙØ¨Ø§Ø·ÙØ© Ø§ÙØ¹Ø§Ù\u0085Ø©",
+        "description_en":  "Internal medicine department",
+        "is_active":  true
+    },
+    {
+        "id":  "a2e432a0-d648-5fd5-aff0-12c41c6b956e",
+        "provider_id":  "127990e5-d917-5e17-aa87-eebccf103b3b",
+        "code":  "NEUROLOGY",
+        "name_ar":  "Ø§ÙÙ\u0085Ø® ÙØ§ÙØ£Ø¹ØµØ§Ø¨",
+        "name_en":  "Neurology",
+        "description_ar":  "ÙØ³Ù\u0085 Ø§ÙÙ\u0085Ø® ÙØ§ÙØ£Ø¹ØµØ§Ø¨",
+        "description_en":  "Neurology department",
+        "is_active":  true
+    },
+    {
+        "id":  "f07d8078-0941-5ecc-8ac7-2ab8041be28c",
+        "provider_id":  "127990e5-d917-5e17-aa87-eebccf103b3b",
+        "code":  "OB_GYN",
+        "name_ar":  "Ø§ÙÙØ³Ø§Ø¡ ÙØ§ÙØªÙÙÙØ¯",
+        "name_en":  "Obstetrics and Gynecology",
+        "description_ar":  "ÙØ³Ù\u0085 Ø§ÙÙØ³Ø§Ø¡ ÙØ§ÙØªÙÙÙØ¯",
+        "description_en":  "Obstetrics and gynecology department",
+        "is_active":  true
+    },
+    {
+        "id":  "8e62b659-4c92-5c0d-a7f1-dee23f951347",
+        "provider_id":  "127990e5-d917-5e17-aa87-eebccf103b3b",
+        "code":  "ORTHOPEDICS",
+        "name_ar":  "Ø§ÙØ¹Ø¸Ø§Ù\u0085 ÙØ§ÙÙ\u0085ÙØ§ØµÙ",
+        "name_en":  "Orthopedics",
+        "description_ar":  "ÙØ³Ù\u0085 Ø¬Ø±Ø§Ø­Ø© Ø§ÙØ¹Ø¸Ø§Ù\u0085",
+        "description_en":  "Orthopedics department",
+        "is_active":  true
+    },
+    {
+        "id":  "b8b3f7a1-be58-5736-8fec-599c1d717924",
+        "provider_id":  "127990e5-d917-5e17-aa87-eebccf103b3b",
+        "code":  "PEDIATRICS",
+        "name_ar":  "Ø·Ø¨ Ø§ÙØ£Ø·ÙØ§Ù",
+        "name_en":  "Pediatrics",
+        "description_ar":  "ÙØ³Ù\u0085 Ø·Ø¨ Ø§ÙØ£Ø·ÙØ§Ù",
+        "description_en":  "Pediatrics department",
+        "is_active":  true
+    },
+    {
+        "id":  "08f9a98a-6162-5828-9fb5-0af8d5298fad",
+        "provider_id":  "127990e5-d917-5e17-aa87-eebccf103b3b",
+        "code":  "PULMONOLOGY",
+        "name_ar":  "Ø§ÙØ£Ù\u0085Ø±Ø§Ø¶ Ø§ÙØµØ¯Ø±ÙØ©",
+        "name_en":  "Pulmonology",
+        "description_ar":  "ÙØ³Ù\u0085 Ø§ÙØ£Ù\u0085Ø±Ø§Ø¶ Ø§ÙØµØ¯Ø±ÙØ©",
+        "description_en":  "Pulmonology department",
+        "is_active":  true
+    },
+    {
+        "id":  "a181229c-f9b8-5026-bb54-4fe472e0193f",
+        "provider_id":  "127990e5-d917-5e17-aa87-eebccf103b3b",
+        "code":  "UROLOGY",
+        "name_ar":  "Ø§ÙÙ\u0085Ø³Ø§ÙÙ Ø§ÙØ¨ÙÙÙØ©",
+        "name_en":  "Urology",
+        "description_ar":  "ÙØ³Ù\u0085 Ø§ÙÙ\u0085Ø³Ø§ÙÙ Ø§ÙØ¨ÙÙÙØ©",
+        "description_en":  "Urology department",
+        "is_active":  true
+    }
+]

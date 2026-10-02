@@ -1,0 +1,19 @@
+﻿[
+    {
+        "id":  "e4b64673-2614-55bb-a13c-ce92f2c83a08",
+        "provider_id":  "5eb0e74d-5cb6-4b16-b91e-b40344250d68",
+        "specialty_id":  "49233db8-5f2a-509e-b24c-a389c6de917f",
+        "full_name_ar":  "Ø¯. Ù\u0085Ø§ÙØ± Ù\u0085Ø­Ù\u0085ÙØ¯",
+        "full_name_en":  "Dr. Maher Mahmoud",
+        "specialty_name_ar":  "Ø§ÙØ£Ù\u0085Ø±Ø§Ø¶ Ø§ÙØ¬ÙØ¯ÙØ©",
+        "specialty_name_en":  "Dermatology",
+        "consultation_fee":  null,
+        "experience_years":  null,
+        "gender":  null,
+        "rating_avg":  null,
+        "review_count":  0,
+        "accepting_new_patients":  true,
+        "verification_status":  "verified",
+        "is_active":  true
+    }
+]

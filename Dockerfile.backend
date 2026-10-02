@@ -1,0 +1,63 @@
+﻿FROM python:3.11-slim-bookworm
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    HF_HOME=/opt/huggingface \
+    APP_HOST=0.0.0.0 \
+    APP_PORT=8001
+
+WORKDIR /app
+
+# ------------------------------------------------------------
+# System dependencies + Microsoft ODBC Driver 18
+# ------------------------------------------------------------
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl \
+        ca-certificates \
+        gnupg \
+        unixodbc-dev \
+        libgomp1 && \
+    curl -sSL -O https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb && \
+    dpkg -i packages-microsoft-prod.deb && \
+    rm packages-microsoft-prod.deb && \
+    apt-get update && \
+    ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18 && \
+    rm -rf /var/lib/apt/lists/*
+
+# ------------------------------------------------------------
+# Python dependencies
+# ------------------------------------------------------------
+COPY requirements-prod.txt .
+
+# Install CPU PyTorch explicitly
+RUN pip install --upgrade pip && \
+    pip install torch==2.6.0 \
+        --index-url https://download.pytorch.org/whl/cpu && \
+    pip install -r requirements-prod.txt
+
+# ------------------------------------------------------------
+# MedMind Agent package
+# ------------------------------------------------------------
+COPY agent/ ./agent/
+RUN pip install --no-deps ./agent
+
+# ------------------------------------------------------------
+# Application runtime
+# ------------------------------------------------------------
+COPY app/ ./app/
+COPY rag/ ./rag/
+COPY mcp_server/ ./mcp_server/
+COPY knowledge_base/ ./knowledge_base/
+COPY migrations/ ./migrations/
+COPY data/ ./data/
+
+# ------------------------------------------------------------
+# Pre-cache AI embedding models
+# ------------------------------------------------------------
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('Omartificial-Intelligence-Space/GATE-AraBert-v1'); SentenceTransformer('BAAI/bge-m3')"
+
+EXPOSE 8001
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
