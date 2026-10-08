@@ -1,0 +1,65 @@
+[
+  {
+    "point_id": "0733b0a2-0356-55d2-b820-3dd718a7b837",
+    "tenant_id": "hospital-001",
+    "chunk_id": "hospital-001:policies:patient_rights:chunk-1",
+    "title": "patient_rights",
+    "category": "policies",
+    "source_url": "https://cleopatrahospitals.com/en/patient-area/patients-rights/",
+    "content": "Patients also have the right to know the name of the physician\nresponsible for their treatment or procedure.\n\n## Informed Consent\n\nBefore a medical procedure or treatment, patients have the\nright to receive information needed to make an informed\ndecision.\n\nThis includes information about the proposed procedure or\ntreatment, important risks, available alternatives, and the\nexpected outcome.\n\n## Costs and Billing"
+  },
+  {
+    "point_id": "32734f12-68cb-5829-9506-df13ed3d7152",
+    "tenant_id": "hospital-001",
+    "chunk_id": "hospital-001:hospital_info:about_hospital:chunk-1",
+    "title": "Cairo Specialized Hospital",
+    "category": "hospital_info",
+    "source_url": "https://cleopatrahospitals.com/en/hospitals/cairo-specialized-hospital/",
+    "content": "- 188 beds\n- Approximately 600 medical staff\n- More than 200,000 cases served\n- Around 8,000 surgeries performed\n\n## Location\n\n4 Abou Ebaid El Bakry Street,\noff Ghernata Street,\nRoxy, Heliopolis,\nCairo, Egypt.\n\n## Contact\n\nHotline: 19668\n\nThe hospital's official website states that the hotline is available 24 hours every day."
+  },
+  {
+    "point_id": "50355557-f137-5ab1-a103-a30419ef547d",
+    "tenant_id": "hospital-001",
+    "chunk_id": "hospital-001:policies:patient_rights:chunk-2",
+    "title": "patient_rights",
+    "category": "policies",
+    "source_url": "https://cleopatrahospitals.com/en/patient-area/patients-rights/",
+    "content": "Patients have the right to receive information about the cost\nof healthcare services provided by the hospital.\n\nPatients may also request an itemized bill explaining charges.\n\n## Confidentiality\n\nMedical records and information related to patient care should\nbe treated as confidential, except when disclosure is required\nby law or authorized by the patient.\n\n## Medical Reports and Test Results"
+  },
+  {
+    "point_id": "928f2ec5-d1df-52ba-97f1-45dc4f869657",
+    "tenant_id": "hospital-001",
+    "chunk_id": "hospital-001:policies:patient_rights:chunk-4",
+    "title": "patient_rights",
+    "category": "policies",
+    "source_url": "https://cleopatrahospitals.com/en/patient-area/patients-rights/",
+    "content": "When refusing treatment may affect the ability to provide\nappropriate care, the possible consequences should be\nexplained to the patient.\n\n## Complaints and Concerns\n\nThe hospital states that patient concerns and complaints should\nbe handled fairly by hospital administration and staff."
+  },
+  {
+    "point_id": "a00910a9-fc80-5246-b7f0-29146a1245fe",
+    "tenant_id": "hospital-001",
+    "chunk_id": "hospital-001:policies:patient_rights:chunk-3",
+    "title": "patient_rights",
+    "category": "policies",
+    "source_url": "https://cleopatrahospitals.com/en/patient-area/patients-rights/",
+    "content": "Patients may request a medical report and copies of their\nmedical test results through the Medical Records Department,\nsubject to the hospital's authorization requirements.\n\n## Second Opinion\n\nPatients have the right to request assistance in obtaining a\nconsultation or second medical opinion from another physician.\n\n## Refusing Treatment\n\nPatients have the right to refuse treatment."
+  },
+  {
+    "point_id": "d87d425a-db38-5c6b-a283-b0d14184d08f",
+    "tenant_id": "hospital-001",
+    "chunk_id": "hospital-001:policies:patient_rights:chunk-0",
+    "title": "patient_rights",
+    "category": "policies",
+    "source_url": "https://cleopatrahospitals.com/en/patient-area/patients-rights/",
+    "content": "﻿# Cairo Specialized Hospital - Patient Rights\n\n## Respect and Privacy\n\nPatients have the right to respectful and considerate care.\n\nPatient privacy should be maintained during examinations,\nassessments, procedures, and treatment.\n\n## Information About Care\n\nPatients have the right to receive understandable information\nfrom their physician about their diagnosis, treatment,\nprognosis, and significant changes in their condition."
+  },
+  {
+    "point_id": "de9430e6-f6f6-5130-a134-6c7d10b3ea4e",
+    "tenant_id": "hospital-001",
+    "chunk_id": "hospital-001:hospital_info:about_hospital:chunk-0",
+    "title": "Cairo Specialized Hospital",
+    "category": "hospital_info",
+    "source_url": "https://cleopatrahospitals.com/en/hospitals/cairo-specialized-hospital/",
+    "content": "# Cairo Specialized Hospital\n\n## About\n\nCairo Specialized Hospital is a private healthcare facility in Egypt and has been providing healthcare services for more than four decades.\n\nThe hospital is part of Cleopatra Hospitals Group.\n\n## Centers of Excellence\n\nThe hospital hosts specialized centers of excellence in:\n\n- Orthopedics\n- Neuroscience\n\n## Hospital Capacity\n\nAccording to the hospital's official website:"
+  }
+]

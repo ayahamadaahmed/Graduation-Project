@@ -1,0 +1,30 @@
+﻿[
+    {
+        "id":  "30016935-4411-5176-ac59-a71526a90cde",
+        "provider_id":  "4b1c424f-05ac-5f74-98f9-7b6ca384c97b",
+        "code":  "HELIOPOLIS",
+        "name_ar":  "Ù\u0085Ø¹Ø§Ù\u0085Ù ÙÙÙÙ - Ù\u0085ØµØ± Ø§ÙØ¬Ø¯ÙØ¯Ø©",
+        "name_en":  "Qwik Medical Labs - Heliopolis",
+        "address_ar":  "Ù\u0085ØµØ± Ø§ÙØ¬Ø¯ÙØ¯Ø©Ø Ø§ÙÙØ§ÙØ±Ø©Ø Ù\u0085ØµØ±",
+        "address_en":  "Heliopolis, Cairo, Egypt",
+        "governorate":  "Cairo",
+        "phone":  "+201200000001",
+        "whatsapp":  "+201200000001",
+        "timezone":  "Africa/Cairo",
+        "is_active":  true
+    },
+    {
+        "id":  "966a93b8-4e20-5d69-8e25-2e528ea8034f",
+        "provider_id":  "4b1c424f-05ac-5f74-98f9-7b6ca384c97b",
+        "code":  "MAADI",
+        "name_ar":  "Ù\u0085Ø¹Ø§Ù\u0085Ù ÙÙÙÙ - Ø§ÙÙ\u0085Ø¹Ø§Ø¯Ù",
+        "name_en":  "Qwik Medical Labs - Maadi",
+        "address_ar":  "Ø§ÙÙ\u0085Ø¹Ø§Ø¯ÙØ Ø§ÙÙØ§ÙØ±Ø©Ø Ù\u0085ØµØ±",
+        "address_en":  "Maadi, Cairo, Egypt",
+        "governorate":  "Cairo",
+        "phone":  "+201200000000",
+        "whatsapp":  "+201200000000",
+        "timezone":  "Africa/Cairo",
+        "is_active":  true
+    }
+]

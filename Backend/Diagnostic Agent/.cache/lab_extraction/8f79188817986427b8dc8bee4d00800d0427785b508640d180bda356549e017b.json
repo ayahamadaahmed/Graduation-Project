@@ -1,0 +1,78 @@
+{
+  "document_type": "lipid_profile",
+  "results": [
+    {
+      "raw_name": "TOTAL CHOLESTEROL",
+      "value": 180.0,
+      "unit": "mg/dl",
+      "reference_min": 125.0,
+      "reference_max": 200.0,
+      "reference_text": "125 - 200"
+    },
+    {
+      "raw_name": "TRIGLYCERIDES",
+      "value": 172.0,
+      "unit": "mg/dl",
+      "reference_min": 25.0,
+      "reference_max": 200.0,
+      "reference_text": "25 - 200"
+    },
+    {
+      "raw_name": "HDL CHOLESTEROL",
+      "value": 55.0,
+      "unit": "mg/dl",
+      "reference_min": 35.0,
+      "reference_max": 80.0,
+      "reference_text": "35 - 80"
+    },
+    {
+      "raw_name": "LDL CHOLESTEROL",
+      "value": 90.6,
+      "unit": "mg/dl",
+      "reference_min": 85.0,
+      "reference_max": 130.0,
+      "reference_text": "85 - 130"
+    },
+    {
+      "raw_name": "VLDL CHOLESTEROL",
+      "value": 34.4,
+      "unit": "mg/dl",
+      "reference_min": 5.0,
+      "reference_max": 40.0,
+      "reference_text": "5 - 40"
+    },
+    {
+      "raw_name": "LDL / HDL",
+      "value": 1.65,
+      "unit": null,
+      "reference_min": 1.5,
+      "reference_max": 3.5,
+      "reference_text": "1.5 - 3.5"
+    },
+    {
+      "raw_name": "TOTAL CHOLESTEROL / HDL",
+      "value": 3.27,
+      "unit": null,
+      "reference_min": 3.5,
+      "reference_max": 5.0,
+      "reference_text": "3.5 - 5"
+    },
+    {
+      "raw_name": "TG / HDL",
+      "value": 3.13,
+      "unit": null,
+      "reference_min": null,
+      "reference_max": null,
+      "reference_text": null
+    },
+    {
+      "raw_name": "NON-HDL CHOLESTEROL",
+      "value": 125.0,
+      "unit": null,
+      "reference_min": null,
+      "reference_max": null,
+      "reference_text": null
+    }
+  ],
+  "unreadable_fields": []
+}

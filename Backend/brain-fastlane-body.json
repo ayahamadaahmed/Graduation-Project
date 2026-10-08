@@ -1,0 +1,8 @@
+﻿{
+    "message":  "Analyze this brain MRI",
+    "channel":  "web",
+    "session_id":  "brain-mri-fastlane-20261005-191505",
+    "attachment_ids":  [
+                           "bb8b9666d18540af8d992f7bab2529e9"
+                       ]
+}

@@ -1,0 +1,8 @@
+﻿{
+    "message":  "Analyze this kidney CT",
+    "channel":  "web",
+    "session_id":  "kidney-ct-fastlane-20261005-194822",
+    "attachment_ids":  [
+                           "72096ebc2c414273b0cc42ca4b052f2c"
+                       ]
+}

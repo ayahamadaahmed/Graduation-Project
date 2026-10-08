@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "modality": "chest_xray",
+  "classification": "normal",
+  "probabilities": {
+    "normal": 0.7835957705974579,
+    "pneumonia": 0.21640422940254211
+  },
+  "confidence": 0.7835957705974579,
+  "inference_latency_ms": 5051.822299952619,
+  "model_name": "mediscan-efficientnetb3-pneumonia",
+  "model_version": "x-ray.keras",
+  "limitations": [
+    "AI model classification for educational and decision-support use only.",
+    "The result is not a clinical diagnosis.",
+    "Model performance may vary across image sources and patient populations."
+  ]
+}

@@ -1,0 +1,8 @@
+﻿{
+    "message":  "Analyze this brain MRI",
+    "channel":  "web",
+    "session_id":  "brain-mri-warm-latency-20261005",
+    "attachment_ids":  [
+                           "63c4183a228f46d190b17dec50f9291b"
+                       ]
+}

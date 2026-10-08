@@ -1,0 +1,8 @@
+﻿{
+    "message":  "Analyze this brain MRI",
+    "channel":  "web",
+    "session_id":  "brain-mri-live-e2e-20261005",
+    "attachment_ids":  [
+                           "3e3e228989e6468782dcfcb146ef7d50"
+                       ]
+}

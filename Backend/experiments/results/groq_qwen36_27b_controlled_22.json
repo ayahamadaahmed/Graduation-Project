@@ -1,0 +1,818 @@
+{
+  "model": "qwen/qwen3.6-27b",
+  "controlled": true,
+  "request_delay_seconds": 13,
+  "validation_cases": 22,
+  "successful_cases": 22,
+  "rate_limited_cases": 0,
+  "accuracy": {
+    "json_valid": 22,
+    "status": 21,
+    "capability": 22,
+    "arguments_raw": 20,
+    "arguments_normalized": 21,
+    "confirmation": 21,
+    "ambiguity": 22,
+    "correction_target": 22,
+    "full_object_exact": 0,
+    "operational_exact_raw": 19,
+    "operational_exact_normalized": 20
+  },
+  "latency": {
+    "client_total": {
+      "count": 22,
+      "p50": 1083.4104999958072,
+      "p95": 9549.289199996565,
+      "avg": 3644.1052045447577
+    },
+    "server_total": {
+      "count": 22,
+      "p50": 245.4137045,
+      "p95": 379.80071399999997,
+      "avg": 268.21237027272724
+    },
+    "queue": {
+      "count": 22,
+      "p50": 89.41552899999999,
+      "p95": 7076.450784000001,
+      "avg": 1866.0153545454546
+    },
+    "prompt": {
+      "count": 22,
+      "p50": 124.154225,
+      "p95": 213.83727299999998,
+      "avg": 139.90448259090908
+    },
+    "completion": {
+      "count": 22,
+      "p50": 118.94944100000001,
+      "p95": 173.85460799999998,
+      "avg": 128.3078876818182
+    },
+    "client_server_gap": {
+      "count": 22,
+      "p50": 848.0468539964817,
+      "p95": 9200.240615996565,
+      "avg": 3375.8928342720305
+    }
+  },
+  "tokens": {
+    "prompt_p50": 1436.5,
+    "completion_p50": 54.5
+  },
+  "real_argument_errors": [
+    {
+      "id": "medmind-planner-058",
+      "gold_capability": "knowledge.search",
+      "pred_capability": "knowledge.search",
+      "gold_arguments": {
+        "query": "عندكم معلومات عن علاج التصبغات؟"
+      },
+      "pred_arguments": {
+        "query": "علاج التصبغات"
+      }
+    }
+  ],
+  "results": [
+    {
+      "id": "medmind-planner-003",
+      "gold": {
+        "status": "selected",
+        "capability": "appointment.create",
+        "arguments": {
+          "doctor_name": "ماهر محمود"
+        },
+        "confirmation": "unknown",
+        "ambiguity_kind": null,
+        "correction_target": null,
+        "reason": ""
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"selected\",\n  \"capability\": \"appointment.create\",\n  \"arguments\": {\n    \"doctor_name\": \"ماهر محمود\"\n  },\n  \"confirmation\": \"unknown\",\n  \"correction_target\": null,\n  \"ambiguity_kind\": null\n}",
+      "prediction": {
+        "status": "selected",
+        "capability": "appointment.create",
+        "arguments": {
+          "doctor_name": "ماهر محمود"
+        },
+        "confirmation": "unknown",
+        "correction_target": null,
+        "ambiguity_kind": null
+      },
+      "client_total_ms": 721.2861000007251,
+      "queue_ms": 89.732412,
+      "prompt_ms": 128.568803,
+      "completion_ms": 174.15555,
+      "server_total_ms": 302.724353,
+      "client_server_gap_ms": 418.5617470007251,
+      "prompt_tokens": 1497,
+      "completion_tokens": 67
+    },
+    {
+      "id": "medmind-planner-010",
+      "gold": {
+        "status": "selected",
+        "capability": "provider.get_slots",
+        "arguments": {
+          "specialty_name": "جلدية",
+          "date_text": "بكرة",
+          "time_text": "بالليل"
+        },
+        "confirmation": "unknown",
+        "ambiguity_kind": null,
+        "correction_target": null,
+        "reason": ""
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"selected\",\n  \"capability\": \"provider.get_slots\",\n  \"arguments\": {\n    \"specialty_name\": \"جلدية\",\n    \"date_text\": \"بكرة\",\n    \"time_text\": \"بالليل\"\n  },\n  \"confirmation\": \"unknown\",\n  \"correction_target\": null,\n  \"ambiguity_kind\": null\n}",
+      "prediction": {
+        "status": "selected",
+        "capability": "provider.get_slots",
+        "arguments": {
+          "specialty_name": "جلدية",
+          "date_text": "بكرة",
+          "time_text": "بالليل"
+        },
+        "confirmation": "unknown",
+        "correction_target": null,
+        "ambiguity_kind": null
+      },
+      "client_total_ms": 7378.608700004406,
+      "queue_ms": 84.84033000000001,
+      "prompt_ms": 102.775885,
+      "completion_ms": 167.65677300000002,
+      "server_total_ms": 270.432658,
+      "client_server_gap_ms": 7108.176042004407,
+      "prompt_tokens": 1435,
+      "completion_tokens": 88
+    },
+    {
+      "id": "medmind-planner-025",
+      "gold": {
+        "status": "selected",
+        "capability": "appointment.create",
+        "arguments": {},
+        "confirmation": "unknown",
+        "ambiguity_kind": null,
+        "correction_target": null,
+        "reason": ""
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"selected\",\n  \"capability\": \"appointment.create\",\n  \"arguments\": {},\n  \"confirmation\": \"unknown\",\n  \"correction_target\": null,\n  \"ambiguity_kind\": null\n}",
+      "prediction": {
+        "status": "selected",
+        "capability": "appointment.create",
+        "arguments": {},
+        "confirmation": "unknown",
+        "correction_target": null,
+        "ambiguity_kind": null
+      },
+      "client_total_ms": 11868.364699999802,
+      "queue_ms": 87.466991,
+      "prompt_ms": 109.51128899999999,
+      "completion_ms": 100.796991,
+      "server_total_ms": 210.30828,
+      "client_server_gap_ms": 11658.056419999803,
+      "prompt_tokens": 1459,
+      "completion_tokens": 53
+    },
+    {
+      "id": "medmind-planner-038",
+      "gold": {
+        "status": "ambiguous",
+        "capability": null,
+        "arguments": {},
+        "confirmation": "unknown",
+        "ambiguity_kind": "needs_clarification",
+        "correction_target": null,
+        "reason": "The requested change cannot be resolved without useful context."
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"ambiguous\",\n  \"capability\": null,\n  \"arguments\": {},\n  \"confirmation\": \"unknown\",\n  \"correction_target\": null,\n  \"ambiguity_kind\": \"needs_clarification\"\n}",
+      "prediction": {
+        "status": "ambiguous",
+        "capability": null,
+        "arguments": {},
+        "confirmation": "unknown",
+        "correction_target": null,
+        "ambiguity_kind": "needs_clarification"
+      },
+      "client_total_ms": 1130.452699995658,
+      "queue_ms": 478.946794,
+      "prompt_ms": 107.98478,
+      "completion_ms": 112.337043,
+      "server_total_ms": 220.321823,
+      "client_server_gap_ms": 910.1308769956579,
+      "prompt_tokens": 1469,
+      "completion_tokens": 56
+    },
+    {
+      "id": "medmind-planner-042",
+      "gold": {
+        "status": "selected",
+        "capability": "appointment.reschedule",
+        "arguments": {
+          "date_text": "السبت"
+        },
+        "confirmation": "unknown",
+        "ambiguity_kind": null,
+        "correction_target": null,
+        "reason": ""
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"selected\",\n  \"capability\": \"appointment.reschedule\",\n  \"arguments\": {\n    \"date_text\": \"السبت\"\n  },\n  \"confirmation\": \"unknown\",\n  \"correction_target\": null,\n  \"ambiguity_kind\": null\n}",
+      "prediction": {
+        "status": "selected",
+        "capability": "appointment.reschedule",
+        "arguments": {
+          "date_text": "السبت"
+        },
+        "confirmation": "unknown",
+        "correction_target": null,
+        "ambiguity_kind": null
+      },
+      "client_total_ms": 1030.6466999973054,
+      "queue_ms": 88.348833,
+      "prompt_ms": 112.748449,
+      "completion_ms": 131.93542,
+      "server_total_ms": 244.683869,
+      "client_server_gap_ms": 785.9628309973054,
+      "prompt_tokens": 1400,
+      "completion_tokens": 67
+    },
+    {
+      "id": "medmind-planner-044",
+      "gold": {
+        "status": "selected",
+        "capability": "appointment.cancel",
+        "arguments": {},
+        "confirmation": "unknown",
+        "ambiguity_kind": null,
+        "correction_target": null,
+        "reason": ""
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"selected\",\n  \"capability\": \"appointment.cancel\",\n  \"arguments\": {},\n  \"confirmation\": \"unknown\",\n  \"correction_target\": null,\n  \"ambiguity_kind\": null\n}",
+      "prediction": {
+        "status": "selected",
+        "capability": "appointment.cancel",
+        "arguments": {},
+        "confirmation": "unknown",
+        "correction_target": null,
+        "ambiguity_kind": null
+      },
+      "client_total_ms": 617.3984999986715,
+      "queue_ms": 87.156083,
+      "prompt_ms": 112.190944,
+      "completion_ms": 101.177216,
+      "server_total_ms": 213.36816,
+      "client_server_gap_ms": 404.0303399986715,
+      "prompt_tokens": 1452,
+      "completion_tokens": 53
+    },
+    {
+      "id": "medmind-planner-052",
+      "gold": {
+        "status": "selected",
+        "capability": "appointment.search",
+        "arguments": {},
+        "confirmation": "unknown",
+        "ambiguity_kind": null,
+        "correction_target": null,
+        "reason": ""
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"selected\",\n  \"capability\": \"appointment.search\",\n  \"arguments\": {},\n  \"confirmation\": \"unknown\",\n  \"correction_target\": null,\n  \"ambiguity_kind\": null\n}",
+      "prediction": {
+        "status": "selected",
+        "capability": "appointment.search",
+        "arguments": {},
+        "confirmation": "unknown",
+        "correction_target": null,
+        "ambiguity_kind": null
+      },
+      "client_total_ms": 722.9361999998218,
+      "queue_ms": 90.310063,
+      "prompt_ms": 126.079799,
+      "completion_ms": 118.346882,
+      "server_total_ms": 244.426681,
+      "client_server_gap_ms": 478.5095189998218,
+      "prompt_tokens": 1460,
+      "completion_tokens": 53
+    },
+    {
+      "id": "medmind-planner-056",
+      "gold": {
+        "status": "selected",
+        "capability": "provider.get_policy",
+        "arguments": {
+          "query": "لو اتأخرت على الكشف بيحصل إيه؟"
+        },
+        "confirmation": "unknown",
+        "ambiguity_kind": null,
+        "correction_target": null,
+        "reason": ""
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"selected\",\n  \"capability\": \"provider.get_policy\",\n  \"arguments\": {\n    \"query\": \"لو اتأخرت على الكشف بيحصل إيه؟\"\n  },\n  \"confirmation\": \"unknown\",\n  \"correction_target\": null,\n  \"ambiguity_kind\": null\n}",
+      "prediction": {
+        "status": "selected",
+        "capability": "provider.get_policy",
+        "arguments": {
+          "query": "لو اتأخرت على الكشف بيحصل إيه؟"
+        },
+        "confirmation": "unknown",
+        "correction_target": null,
+        "ambiguity_kind": null
+      },
+      "client_total_ms": 7891.065499999968,
+      "queue_ms": 7076.450784000001,
+      "prompt_ms": 177.027175,
+      "completion_ms": 167.910828,
+      "server_total_ms": 344.938003,
+      "client_server_gap_ms": 7546.127496999968,
+      "prompt_tokens": 1513,
+      "completion_tokens": 76
+    },
+    {
+      "id": "medmind-planner-058",
+      "gold": {
+        "status": "selected",
+        "capability": "knowledge.search",
+        "arguments": {
+          "query": "عندكم معلومات عن علاج التصبغات؟"
+        },
+        "confirmation": "unknown",
+        "ambiguity_kind": null,
+        "correction_target": null,
+        "reason": ""
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"selected\",\n  \"capability\": \"knowledge.search\",\n  \"arguments\": {\n    \"query\": \"علاج التصبغات\"\n  },\n  \"confirmation\": \"unknown\",\n  \"correction_target\": null,\n  \"ambiguity_kind\": null\n}",
+      "prediction": {
+        "status": "selected",
+        "capability": "knowledge.search",
+        "arguments": {
+          "query": "علاج التصبغات"
+        },
+        "confirmation": "unknown",
+        "correction_target": null,
+        "ambiguity_kind": null
+      },
+      "client_total_ms": 6454.403599993384,
+      "queue_ms": 5617.517995,
+      "prompt_ms": 213.83727299999998,
+      "completion_ms": 165.963441,
+      "server_total_ms": 379.80071399999997,
+      "client_server_gap_ms": 6074.602885993384,
+      "prompt_tokens": 1416,
+      "completion_tokens": 68
+    },
+    {
+      "id": "medmind-planner-060",
+      "gold": {
+        "status": "selected",
+        "capability": "provider.search_doctors",
+        "arguments": {
+          "specialty_name": "القلب"
+        },
+        "confirmation": "unknown",
+        "ambiguity_kind": null,
+        "correction_target": null,
+        "reason": ""
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"selected\",\n  \"capability\": \"provider.search_doctors\",\n  \"arguments\": {\n    \"specialty_name\": \"القلب\"\n  },\n  \"confirmation\": \"unknown\",\n  \"correction_target\": null,\n  \"ambiguity_kind\": null\n}",
+      "prediction": {
+        "status": "selected",
+        "capability": "provider.search_doctors",
+        "arguments": {
+          "specialty_name": "القلب"
+        },
+        "confirmation": "unknown",
+        "correction_target": null,
+        "ambiguity_kind": null
+      },
+      "client_total_ms": 6666.879899996275,
+      "queue_ms": 5729.655797,
+      "prompt_ms": 188.909468,
+      "completion_ms": 154.30212500000002,
+      "server_total_ms": 343.211593,
+      "client_server_gap_ms": 6323.668306996275,
+      "prompt_tokens": 1473,
+      "completion_tokens": 69
+    },
+    {
+      "id": "medmind-planner-061",
+      "gold": {
+        "status": "selected",
+        "capability": "provider.get_services",
+        "arguments": {
+          "doctor_name": "دكتورة منى"
+        },
+        "confirmation": "unknown",
+        "ambiguity_kind": null,
+        "correction_target": null,
+        "reason": ""
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"selected\",\n  \"capability\": \"provider.get_services\",\n  \"arguments\": {\n    \"doctor_name\": \"منى\"\n  },\n  \"confirmation\": \"unknown\",\n  \"correction_target\": null,\n  \"ambiguity_kind\": null\n}",
+      "prediction": {
+        "status": "selected",
+        "capability": "provider.get_services",
+        "arguments": {
+          "doctor_name": "منى"
+        },
+        "confirmation": "unknown",
+        "correction_target": null,
+        "ambiguity_kind": null
+      },
+      "client_total_ms": 9549.289199996565,
+      "queue_ms": 8915.631317000001,
+      "prompt_ms": 203.40346100000002,
+      "completion_ms": 145.64512299999998,
+      "server_total_ms": 349.048584,
+      "client_server_gap_ms": 9200.240615996565,
+      "prompt_tokens": 1497,
+      "completion_tokens": 66
+    },
+    {
+      "id": "medmind-planner-062",
+      "gold": {
+        "status": "selected",
+        "capability": "provider.get_working_hours",
+        "arguments": {
+          "branch_name": "مدينة نصر",
+          "date_text": "بكرة"
+        },
+        "confirmation": "unknown",
+        "ambiguity_kind": null,
+        "correction_target": null,
+        "reason": ""
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"selected\",\n  \"capability\": \"provider.get_working_hours\",\n  \"arguments\": {\n    \"branch_name\": \"مدينة نصر\",\n    \"date_text\": \"بكرة\"\n  },\n  \"confirmation\": \"unknown\",\n  \"correction_target\": null,\n  \"ambiguity_kind\": null\n}",
+      "prediction": {
+        "status": "selected",
+        "capability": "provider.get_working_hours",
+        "arguments": {
+          "branch_name": "مدينة نصر",
+          "date_text": "بكرة"
+        },
+        "confirmation": "unknown",
+        "correction_target": null,
+        "ambiguity_kind": null
+      },
+      "client_total_ms": 6428.678099997342,
+      "queue_ms": 5688.438444,
+      "prompt_ms": 215.85649600000002,
+      "completion_ms": 173.85460799999998,
+      "server_total_ms": 389.711104,
+      "client_server_gap_ms": 6038.966995997342,
+      "prompt_tokens": 1434,
+      "completion_tokens": 78
+    },
+    {
+      "id": "medmind-planner-064",
+      "gold": {
+        "status": "selected",
+        "capability": "appointment.reschedule",
+        "arguments": {},
+        "confirmation": "yes",
+        "ambiguity_kind": null,
+        "correction_target": null,
+        "reason": ""
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"selected\",\n  \"capability\": \"appointment.reschedule\",\n  \"confirmation\": \"yes\",\n  \"arguments\": {},\n  \"correction_target\": null,\n  \"ambiguity_kind\": null\n}",
+      "prediction": {
+        "status": "selected",
+        "capability": "appointment.reschedule",
+        "confirmation": "yes",
+        "arguments": {},
+        "correction_target": null,
+        "ambiguity_kind": null
+      },
+      "client_total_ms": 6044.05200000474,
+      "queue_ms": 5294.415555,
+      "prompt_ms": 181.967164,
+      "completion_ms": 119.552,
+      "server_total_ms": 301.519164,
+      "client_server_gap_ms": 5742.53283600474,
+      "prompt_tokens": 1397,
+      "completion_tokens": 54
+    },
+    {
+      "id": "medmind-planner-066",
+      "gold": {
+        "status": "selected",
+        "capability": "appointment.create",
+        "arguments": {},
+        "confirmation": "no",
+        "ambiguity_kind": null,
+        "correction_target": null,
+        "reason": ""
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"selected\",\n  \"capability\": \"appointment.create\",\n  \"confirmation\": \"no\",\n  \"arguments\": {},\n  \"correction_target\": null,\n  \"ambiguity_kind\": null\n}",
+      "prediction": {
+        "status": "selected",
+        "capability": "appointment.create",
+        "confirmation": "no",
+        "arguments": {},
+        "correction_target": null,
+        "ambiguity_kind": null
+      },
+      "client_total_ms": 617.6663000005647,
+      "queue_ms": 86.871572,
+      "prompt_ms": 132.674801,
+      "completion_ms": 114.19597900000001,
+      "server_total_ms": 246.87078000000002,
+      "client_server_gap_ms": 370.79552000056464,
+      "prompt_tokens": 1418,
+      "completion_tokens": 53
+    },
+    {
+      "id": "medmind-planner-068",
+      "gold": {
+        "status": "selected",
+        "capability": "appointment.create",
+        "arguments": {},
+        "confirmation": "unknown",
+        "ambiguity_kind": null,
+        "correction_target": "patient_name",
+        "reason": ""
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"selected\",\n  \"capability\": \"appointment.create\",\n  \"arguments\": {},\n  \"confirmation\": \"unknown\",\n  \"correction_target\": \"patient_name\",\n  \"ambiguity_kind\": null\n}",
+      "prediction": {
+        "status": "selected",
+        "capability": "appointment.create",
+        "arguments": {},
+        "confirmation": "unknown",
+        "correction_target": "patient_name",
+        "ambiguity_kind": null
+      },
+      "client_total_ms": 723.7309000047389,
+      "queue_ms": 88.70695500000001,
+      "prompt_ms": 120.332164,
+      "completion_ms": 108.090418,
+      "server_total_ms": 228.422582,
+      "client_server_gap_ms": 495.3083180047389,
+      "prompt_tokens": 1421,
+      "completion_tokens": 55
+    },
+    {
+      "id": "medmind-planner-070",
+      "gold": {
+        "status": "selected",
+        "capability": "appointment.create",
+        "arguments": {},
+        "confirmation": "unknown",
+        "ambiguity_kind": null,
+        "correction_target": "phone",
+        "reason": ""
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"selected\",\n  \"capability\": \"appointment.create\",\n  \"arguments\": {},\n  \"confirmation\": \"unknown\",\n  \"correction_target\": \"phone\",\n  \"ambiguity_kind\": null\n}",
+      "prediction": {
+        "status": "selected",
+        "capability": "appointment.create",
+        "arguments": {},
+        "confirmation": "unknown",
+        "correction_target": "phone",
+        "ambiguity_kind": null
+      },
+      "client_total_ms": 1036.3682999959565,
+      "queue_ms": 450.616377,
+      "prompt_ms": 128.928825,
+      "completion_ms": 131.218492,
+      "server_total_ms": 260.147317,
+      "client_server_gap_ms": 776.2209829959565,
+      "prompt_tokens": 1424,
+      "completion_tokens": 54
+    },
+    {
+      "id": "medmind-planner-072",
+      "gold": {
+        "status": "selected",
+        "capability": "appointment.create",
+        "arguments": {},
+        "confirmation": "unknown",
+        "ambiguity_kind": null,
+        "correction_target": "doctor",
+        "reason": ""
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"selected\",\n  \"capability\": \"appointment.create\",\n  \"arguments\": {},\n  \"confirmation\": \"unknown\",\n  \"correction_target\": \"doctor\",\n  \"ambiguity_kind\": null\n}",
+      "prediction": {
+        "status": "selected",
+        "capability": "appointment.create",
+        "arguments": {},
+        "confirmation": "unknown",
+        "correction_target": "doctor",
+        "ambiguity_kind": null
+      },
+      "client_total_ms": 7260.3174000032595,
+      "queue_ms": 86.427542,
+      "prompt_ms": 122.46011,
+      "completion_ms": 103.845461,
+      "server_total_ms": 226.30557100000001,
+      "client_server_gap_ms": 7034.01182900326,
+      "prompt_tokens": 1418,
+      "completion_tokens": 54
+    },
+    {
+      "id": "medmind-planner-074",
+      "gold": {
+        "status": "selected",
+        "capability": "appointment.create",
+        "arguments": {},
+        "confirmation": "unknown",
+        "ambiguity_kind": null,
+        "correction_target": "schedule",
+        "reason": ""
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"selected\",\n  \"capability\": \"appointment.create\",\n  \"arguments\": {},\n  \"confirmation\": \"unknown\",\n  \"correction_target\": \"schedule\",\n  \"ambiguity_kind\": null\n}",
+      "prediction": {
+        "status": "selected",
+        "capability": "appointment.create",
+        "arguments": {},
+        "confirmation": "unknown",
+        "correction_target": "schedule",
+        "ambiguity_kind": null
+      },
+      "client_total_ms": 671.9503999993321,
+      "queue_ms": 89.098646,
+      "prompt_ms": 122.047979,
+      "completion_ms": 106.017426,
+      "server_total_ms": 228.065405,
+      "client_server_gap_ms": 443.88499499933215,
+      "prompt_tokens": 1422,
+      "completion_tokens": 54
+    },
+    {
+      "id": "medmind-planner-076",
+      "gold": {
+        "status": "selected",
+        "capability": "appointment.create",
+        "arguments": {},
+        "confirmation": "unknown",
+        "ambiguity_kind": null,
+        "correction_target": "time",
+        "reason": ""
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"selected\",\n  \"capability\": \"appointment.create\",\n  \"arguments\": {},\n  \"confirmation\": \"unknown\",\n  \"correction_target\": \"time\",\n  \"ambiguity_kind\": null\n}",
+      "prediction": {
+        "status": "selected",
+        "capability": "appointment.create",
+        "arguments": {},
+        "confirmation": "unknown",
+        "correction_target": "time",
+        "ambiguity_kind": null
+      },
+      "client_total_ms": 680.0079000022379,
+      "queue_ms": 88.102945,
+      "prompt_ms": 114.679926,
+      "completion_ms": 106.154414,
+      "server_total_ms": 220.83434,
+      "client_server_gap_ms": 459.1735600022379,
+      "prompt_tokens": 1438,
+      "completion_tokens": 54
+    },
+    {
+      "id": "medmind-planner-078",
+      "gold": {
+        "status": "selected",
+        "capability": "appointment.create",
+        "arguments": {},
+        "confirmation": "unknown",
+        "ambiguity_kind": null,
+        "correction_target": "national_id",
+        "reason": ""
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"selected\",\n  \"capability\": \"appointment.create\",\n  \"arguments\": {},\n  \"confirmation\": \"unknown\",\n  \"correction_target\": \"national_id\",\n  \"ambiguity_kind\": null\n}",
+      "prediction": {
+        "status": "selected",
+        "capability": "appointment.create",
+        "arguments": {},
+        "confirmation": "unknown",
+        "correction_target": "national_id",
+        "ambiguity_kind": null
+      },
+      "client_total_ms": 822.128599997086,
+      "queue_ms": 85.427382,
+      "prompt_ms": 113.67683600000001,
+      "completion_ms": 132.466704,
+      "server_total_ms": 246.14354,
+      "client_server_gap_ms": 575.985059997086,
+      "prompt_tokens": 1360,
+      "completion_tokens": 55
+    },
+    {
+      "id": "medmind-planner-080",
+      "gold": {
+        "status": "selected",
+        "capability": "human_support.transfer",
+        "arguments": {},
+        "confirmation": "unknown",
+        "ambiguity_kind": null,
+        "correction_target": null,
+        "reason": ""
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"selected\",\n  \"capability\": \"human_support.transfer\",\n  \"arguments\": {},\n  \"confirmation\": \"unknown\",\n  \"correction_target\": null,\n  \"ambiguity_kind\": null\n}",
+      "prediction": {
+        "status": "selected",
+        "capability": "human_support.transfer",
+        "arguments": {},
+        "confirmation": "unknown",
+        "correction_target": null,
+        "ambiguity_kind": null
+      },
+      "client_total_ms": 610.4008999973303,
+      "queue_ms": 87.077238,
+      "prompt_ms": 116.38865,
+      "completion_ms": 102.626018,
+      "server_total_ms": 219.014668,
+      "client_server_gap_ms": 391.38623199733024,
+      "prompt_tokens": 1494,
+      "completion_tokens": 54
+    },
+    {
+      "id": "medmind-planner-081",
+      "gold": {
+        "status": "ambiguous",
+        "capability": null,
+        "arguments": {},
+        "confirmation": "unknown",
+        "ambiguity_kind": "candidate_miss",
+        "correction_target": null,
+        "reason": "Rescheduling is clearly requested but appointment.reschedule is not a candidate."
+      },
+      "success": true,
+      "rate_limited": false,
+      "error": null,
+      "raw": "{\n  \"status\": \"candidate_miss\",\n  \"capability\": null,\n  \"arguments\": {},\n  \"ambiguity_kind\": \"candidate_miss\"\n}",
+      "prediction": {
+        "status": "candidate_miss",
+        "capability": null,
+        "arguments": {},
+        "ambiguity_kind": "candidate_miss"
+      },
+      "client_total_ms": 1243.6818999995012,
+      "queue_ms": 661.0977449999999,
+      "prompt_ms": 125.84834000000001,
+      "completion_ms": 84.52461699999999,
+      "server_total_ms": 210.37295699999999,
+      "client_server_gap_ms": 1033.3089429995011,
+      "prompt_tokens": 1471,
+      "completion_tokens": 38
+    }
+  ]
+}

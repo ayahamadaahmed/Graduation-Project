@@ -1,0 +1,65 @@
+[
+  {
+    "point_id": "0b5bdea7-087f-5b5f-a2a6-15738f8d4562",
+    "tenant_id": "lab-001",
+    "chunk_id": "lab-001:test_instructions:pre_testing_precautions:chunk-0",
+    "title": "pre_testing_precautions",
+    "category": "test_instructions",
+    "source_url": "https://alfalaboratory.com/pre-testing-precautions/",
+    "content": "﻿# Alfa Labs - Pre-Testing Precautions\n\n## General Guidance\n\nSome laboratory tests require specific preparation before\nthe sample is collected.\n\nPatients should follow the instructions provided for the\nspecific requested test and follow their physician's\ninstructions when applicable.\n\nMedication should not be stopped or changed unless the\nphysician or laboratory specifically instructs the patient\nto do so.\n\n## Fasting Blood Glucose"
+  },
+  {
+    "point_id": "31b4c775-4e78-5558-832f-94341b62dab8",
+    "tenant_id": "lab-001",
+    "chunk_id": "lab-001:test_instructions:pre_testing_precautions:chunk-3",
+    "title": "pre_testing_precautions",
+    "category": "test_instructions",
+    "source_url": "https://alfalaboratory.com/pre-testing-precautions/",
+    "content": "The laboratory's instructions state that the collected\nurine should be kept refrigerated until it is delivered\nto the laboratory.\n\n## Sample-Specific Instructions\n\nSome laboratory tests have additional preparation,\ncollection, storage, or timing requirements.\n\nPatients should confirm the requirements for their\nspecific test with the laboratory before collecting\nor submitting the sample."
+  },
+  {
+    "point_id": "31ebee84-b643-549f-8e90-93c0cb7f68dd",
+    "tenant_id": "lab-001",
+    "chunk_id": "lab-001:lab_info:about_lab:chunk-0",
+    "title": "معامل ألفا",
+    "category": "lab_info",
+    "source_url": "https://alfalaboratory.com/ar/about-us/",
+    "content": "# معامل ألفا\n\n## عن المعمل\n\nتأسست معامل ألفا عام 1998، وتطورت إلى شبكة معامل تضم أكثر من 220 فرعًا في أنحاء مصر.\n\nتقدم معامل ألفا خدمات الاختبارات المعملية، بداية من الفحوصات الروتينية وحتى الفحوصات التشخيصية والمتخصصة.\n\n## الجودة والاعتماد\n\nبحسب الموقع الرسمي، تلتزم معامل ألفا بمعايير الجودة، وحصلت على اعتمادات من:\n\n- GAHAR\n- EGAC\n\n## الخدمات\n\nتشمل الخدمات المتاحة فحوصات الصحة العامة، والفحوصات المخصصة للأمراض، والفحوصات المتخصصة.\n\nكما يوفر الموقع خدمة طلب زيارة منزلية لإجراء الفحوصات."
+  },
+  {
+    "point_id": "4e72a10b-d15e-5484-86d2-a70d70dacc54",
+    "tenant_id": "lab-001",
+    "chunk_id": "lab-001:test_instructions:pre_testing_precautions:chunk-1",
+    "title": "pre_testing_precautions",
+    "category": "test_instructions",
+    "source_url": "https://alfalaboratory.com/pre-testing-precautions/",
+    "content": "According to Alfa Labs, fasting blood glucose may require\napproximately 6 to 12 hours of fasting.\n\nWater is permitted during the fasting period.\n\n## Lipid Profile\n\nA lipid profile may require approximately 12 to 16 hours\nof fasting.\n\nWater is permitted during the fasting period.\n\n## Blood Cholesterol\n\nBlood cholesterol testing may require approximately\n6 to 16 hours of fasting.\n\n## Urine Pregnancy Test"
+  },
+  {
+    "point_id": "5ec7c553-0fc7-5260-9d6f-395bc52f42ce",
+    "tenant_id": "lab-001",
+    "chunk_id": "lab-001:home_sampling:home_visit_request:chunk-0",
+    "title": "home_visit_request",
+    "category": "home_sampling",
+    "source_url": "https://alfalaboratory.com/ar/home-visit-request-2/",
+    "content": "﻿# معامل ألفا - طلب زيارة منزلية\n\n## خدمة الزيارة المنزلية\n\nيوفر الموقع الرسمي لمعامل ألفا إمكانية طلب زيارة منزلية\nلخدمات المعمل.\n\n## البيانات المطلوبة للطلب\n\nيتضمن نموذج طلب الزيارة المنزلية البيانات التالية:\n\n- الاسم الكامل\n- النوع\n- تاريخ الميلاد\n- البريد الإلكتروني\n- رقم الهاتف\n- العنوان\n\n## تقديم الطلب\n\nيتم إدخال البيانات المطلوبة في نموذج الزيارة المنزلية\nثم إرسال الطلب من خلال الموقع الرسمي لمعامل ألفا."
+  },
+  {
+    "point_id": "9ad3bca0-b61b-5bc4-8347-9ceb12a6bfdf",
+    "tenant_id": "lab-001",
+    "chunk_id": "lab-001:lab_info:about_lab:chunk-1",
+    "title": "معامل ألفا",
+    "category": "lab_info",
+    "source_url": "https://alfalaboratory.com/ar/about-us/",
+    "content": "## التواصل\n\nHotline: 16191\nEmail: care@alfalabs.com"
+  },
+  {
+    "point_id": "f465dd05-d35d-5556-aff7-82fd41b2935b",
+    "tenant_id": "lab-001",
+    "chunk_id": "lab-001:test_instructions:pre_testing_precautions:chunk-2",
+    "title": "pre_testing_precautions",
+    "category": "test_instructions",
+    "source_url": "https://alfalaboratory.com/pre-testing-precautions/",
+    "content": "The laboratory recommends using an early-morning urine\nsample because the pregnancy hormone is generally more\nconcentrated in the first urine of the day.\n\n## 24-Hour Urine Collection\n\nFor tests requiring a 24-hour urine collection, the\ncollection period starts after emptying the bladder and\nrecording the start time.\n\nUrine is then collected through the same time on the\nfollowing day."
+  }
+]

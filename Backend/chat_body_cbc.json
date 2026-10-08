@@ -1,0 +1,6 @@
+{
+  "session_id": "doctor-demo-pathology-cbc-final-133100",
+  "message": "Analyze this blood test",
+  "channel": "web",
+  "attachment_ids": ["182ab1dcef914754b969009e460a5726"]
+}

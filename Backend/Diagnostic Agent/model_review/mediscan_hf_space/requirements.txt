@@ -1,0 +1,7 @@
+gradio
+groq
+numpy
+tensorflow-cpu
+pillow
+opencv-python-headless
+supabase

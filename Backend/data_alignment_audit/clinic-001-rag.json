@@ -1,0 +1,56 @@
+[
+  {
+    "point_id": "14a5f648-0ed9-5f49-a9bc-01e67e9c17aa",
+    "tenant_id": "clinic-001",
+    "chunk_id": "clinic-001:services:dermatology_services:chunk-2",
+    "title": "dermatology_services",
+    "category": "services",
+    "source_url": "https://www.drmahermahmoud.com/",
+    "content": "The clinic provides skin cancer screening.\n\n## Eczema and Psoriasis\n\nThe clinic provides care for eczema and psoriasis.\n\n## Genital Dermatology\n\nGenital dermatology is listed among the clinic's areas of\nspecialty."
+  },
+  {
+    "point_id": "1e572e3b-a12a-53e6-9c71-6a2f47990620",
+    "tenant_id": "clinic-001",
+    "chunk_id": "clinic-001:services:dermatology_services:chunk-1",
+    "title": "dermatology_services",
+    "category": "services",
+    "source_url": "https://www.drmahermahmoud.com/",
+    "content": "## Melasma and Pigmentation\n\nThe clinic provides treatment for melasma and skin\npigmentation concerns.\n\n## Hair Loss\n\nThe clinic provides evaluation and treatment for hair loss.\n\n## Laser Hair Removal\n\nLaser hair removal is listed among the clinic's available\nservices.\n\n## Chemical Peels and Facials\n\nThe clinic provides chemical peels and facial treatments.\n\n## Botox and Fillers\n\nBotox and filler treatments are listed among the clinic's\ncosmetic dermatology services.\n\n## Skin Cancer Screening"
+  },
+  {
+    "point_id": "a0a1b00f-7639-546e-a2cd-4802596da693",
+    "tenant_id": "clinic-001",
+    "chunk_id": "clinic-001:clinic_info:about_clinic:chunk-1",
+    "title": "Dr. Maher Mahmoud Dermatology Clinic",
+    "category": "clinic_info",
+    "source_url": "https://www.drmahermahmoud.com/",
+    "content": "- Adult dermatology\n- Pediatric dermatology\n- Cosmetic dermatology and laser treatments\n- Acne and acne-scar treatment\n- Melasma and pigmentation treatment\n- Hair-loss treatment\n- Laser hair removal\n- Chemical peels and facials\n- Botox and fillers\n- Skin cancer screening\n- Eczema and psoriasis care\n\n## Locations\n\nMain location:\nCairo Medical Center, Cairo, Egypt.\n\nSecond location:\nTower of Seridar, Dokki, Cairo.\n\n## Business Hours"
+  },
+  {
+    "point_id": "c57295a7-ad27-5e22-bbe8-63cc87ac44c4",
+    "tenant_id": "clinic-001",
+    "chunk_id": "clinic-001:clinic_info:about_clinic:chunk-0",
+    "title": "Dr. Maher Mahmoud Dermatology Clinic",
+    "category": "clinic_info",
+    "source_url": "https://www.drmahermahmoud.com/",
+    "content": "# Dr. Maher Mahmoud Dermatology Clinic\n\n## About\n\nDr. Maher Mahmoud is a board-certified dermatologist and consultant in dermatology, cosmetic medicine, and laser therapy with more than 30 years of experience.\n\nThe clinic provides medical and cosmetic dermatology services for adults and children.\n\n## Services\n\nThe clinic provides services including:"
+  },
+  {
+    "point_id": "eadd159d-b6f1-534e-9b90-414b5cc0cd1b",
+    "tenant_id": "clinic-001",
+    "chunk_id": "clinic-001:clinic_info:about_clinic:chunk-2",
+    "title": "Dr. Maher Mahmoud Dermatology Clinic",
+    "category": "clinic_info",
+    "source_url": "https://www.drmahermahmoud.com/",
+    "content": "Monday: 11:00 AM - 10:00 PM\nTuesday: 11:00 AM - 10:00 PM\nWednesday: 11:00 AM - 10:00 PM\nThursday: 11:00 AM - 10:00 PM\nFriday: Closed\nSaturday: 11:00 AM - 11:00 PM\nSunday: 11:00 AM - 10:00 PM\n\n## Contact\n\nPhone: +201114654440\nEmail: info@drmahermahmoud.com"
+  },
+  {
+    "point_id": "f4ed340f-aaf5-5091-943e-60705941f7c7",
+    "tenant_id": "clinic-001",
+    "chunk_id": "clinic-001:services:dermatology_services:chunk-0",
+    "title": "dermatology_services",
+    "category": "services",
+    "source_url": "https://www.drmahermahmoud.com/",
+    "content": "﻿# Dr. Maher Mahmoud Dermatology Services\n\n## Overview\n\nDr. Maher Mahmoud provides medical and cosmetic dermatology\ncare for adults and children.\n\n## Adult Dermatology\n\nThe clinic provides dermatology care for adult patients.\n\n## Pediatric Dermatology\n\nThe clinic provides dermatology care for children.\n\n## Cosmetic Dermatology and Laser\n\nThe clinic provides cosmetic dermatology and laser-based\ntreatments.\n\n## Acne and Acne Scars\n\nDr. Maher Mahmoud provides treatment for acne and acne scars."
+  }
+]

@@ -1,0 +1,8 @@
+﻿{
+    "message":  "Analyze this chest X-ray",
+    "channel":  "web",
+    "session_id":  "chest-xray-fastlane-20261005-195521",
+    "attachment_ids":  [
+                           "2301b91d18124162ab1de6d6f88b681a"
+                       ]
+}

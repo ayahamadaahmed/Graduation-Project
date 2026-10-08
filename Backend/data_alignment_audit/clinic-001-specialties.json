@@ -1,0 +1,12 @@
+﻿[
+    {
+        "id":  "49233db8-5f2a-509e-b24c-a389c6de917f",
+        "provider_id":  "5eb0e74d-5cb6-4b16-b91e-b40344250d68",
+        "code":  "DERMATOLOGY",
+        "name_ar":  "Ø§ÙØ£Ù\u0085Ø±Ø§Ø¶ Ø§ÙØ¬ÙØ¯ÙØ©",
+        "name_en":  "Dermatology",
+        "description_ar":  "ØªØ´Ø®ÙØµ ÙØ¹ÙØ§Ø¬ Ø£Ù\u0085Ø±Ø§Ø¶ Ø§ÙØ¬ÙØ¯ ÙØ§ÙØ´Ø¹Ø±",
+        "description_en":  "Diagnosis and treatment of skin and hair conditions",
+        "is_active":  true
+    }
+]

@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "modality": "kidney_ct",
+  "classification": "normal",
+  "probabilities": {
+    "cyst": 0.10838542878627777,
+    "normal": 0.6034400463104248,
+    "stone": 0.2719869315624237,
+    "tumor": 0.016187697649002075
+  },
+  "confidence": 0.6034400463104248,
+  "inference_latency_ms": 2981.5159999998286,
+  "model_name": "medmind-kidney-ct-efficientnetb0",
+  "model_version": "medmind_kidney_ct_model.keras",
+  "limitations": [
+    "AI model classification for educational and decision-support use only.",
+    "The result is not a clinical diagnosis.",
+    "Evaluation was performed on an image-level held-out split.",
+    "Patient identifiers were unavailable, so patient-level split independence could not be verified.",
+    "Model performance may vary across image sources and patient populations."
+  ]
+}

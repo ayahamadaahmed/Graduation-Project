@@ -1,0 +1,80 @@
+﻿[
+    {
+        "id":  "d9d34ab6-4ebf-44e9-bc95-2e0ec65e8e25",
+        "provider_id":  "5eb0e74d-5cb6-4b16-b91e-b40344250d68",
+        "doctor_id":  "e4b64673-2614-55bb-a13c-ce92f2c83a08",
+        "branch_id":  "68294c46-f44b-5b80-a811-7f5313a179dd",
+        "day_of_week":  0,
+        "start_time":  "12:00:00",
+        "end_time":  "15:00:00",
+        "slot_duration_minutes":  30,
+        "is_active":  true,
+        "created_at":  "2026-08-18T17:59:37.322335Z",
+        "updated_at":  "2026-08-18T17:59:37.322335Z"
+    },
+    {
+        "id":  "03e5e403-37f2-43f2-8a0b-d5ce3eb1e9cd",
+        "provider_id":  "5eb0e74d-5cb6-4b16-b91e-b40344250d68",
+        "doctor_id":  "e4b64673-2614-55bb-a13c-ce92f2c83a08",
+        "branch_id":  "4106b6d3-77a6-5f82-8161-7b87e24c2078",
+        "day_of_week":  1,
+        "start_time":  "17:00:00",
+        "end_time":  "20:00:00",
+        "slot_duration_minutes":  30,
+        "is_active":  true,
+        "created_at":  "2026-08-18T17:59:37.762472Z",
+        "updated_at":  "2026-08-18T17:59:37.762472Z"
+    },
+    {
+        "id":  "c1e80fe5-1c40-43e7-a652-5fc211463e06",
+        "provider_id":  "5eb0e74d-5cb6-4b16-b91e-b40344250d68",
+        "doctor_id":  "e4b64673-2614-55bb-a13c-ce92f2c83a08",
+        "branch_id":  "68294c46-f44b-5b80-a811-7f5313a179dd",
+        "day_of_week":  2,
+        "start_time":  "12:00:00",
+        "end_time":  "15:00:00",
+        "slot_duration_minutes":  30,
+        "is_active":  true,
+        "created_at":  "2026-08-18T17:59:37.682454Z",
+        "updated_at":  "2026-08-18T17:59:37.682454Z"
+    },
+    {
+        "id":  "fa5041b3-3af0-40ae-ac34-dc3f4d9bba23",
+        "provider_id":  "5eb0e74d-5cb6-4b16-b91e-b40344250d68",
+        "doctor_id":  "e4b64673-2614-55bb-a13c-ce92f2c83a08",
+        "branch_id":  "4106b6d3-77a6-5f82-8161-7b87e24c2078",
+        "day_of_week":  3,
+        "start_time":  "17:00:00",
+        "end_time":  "20:00:00",
+        "slot_duration_minutes":  30,
+        "is_active":  true,
+        "created_at":  "2026-08-18T17:59:37.815078Z",
+        "updated_at":  "2026-08-18T17:59:37.815078Z"
+    },
+    {
+        "id":  "407e2b76-b133-4d1a-befa-926295e46ec3",
+        "provider_id":  "5eb0e74d-5cb6-4b16-b91e-b40344250d68",
+        "doctor_id":  "e4b64673-2614-55bb-a13c-ce92f2c83a08",
+        "branch_id":  "4106b6d3-77a6-5f82-8161-7b87e24c2078",
+        "day_of_week":  5,
+        "start_time":  "17:00:00",
+        "end_time":  "20:00:00",
+        "slot_duration_minutes":  30,
+        "is_active":  true,
+        "created_at":  "2026-08-18T17:59:37.858005Z",
+        "updated_at":  "2026-08-18T17:59:37.858005Z"
+    },
+    {
+        "id":  "3062aa80-45e2-4a9b-84d6-577f5c61743d",
+        "provider_id":  "5eb0e74d-5cb6-4b16-b91e-b40344250d68",
+        "doctor_id":  "e4b64673-2614-55bb-a13c-ce92f2c83a08",
+        "branch_id":  "68294c46-f44b-5b80-a811-7f5313a179dd",
+        "day_of_week":  6,
+        "start_time":  "12:00:00",
+        "end_time":  "15:00:00",
+        "slot_duration_minutes":  30,
+        "is_active":  true,
+        "created_at":  "2026-08-18T17:59:37.723928Z",
+        "updated_at":  "2026-08-18T17:59:37.723928Z"
+    }
+]

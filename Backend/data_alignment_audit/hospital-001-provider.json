@@ -1,0 +1,17 @@
+﻿[
+    {
+        "id":  "127990e5-d917-5e17-aa87-eebccf103b3b",
+        "tenant_key":  "hospital-001",
+        "name":  "Al-Shifa Hospital",
+        "slug":  "al-shifa-hospital",
+        "org_type":  "hospital",
+        "verification_status":  "verified",
+        "default_language":  "ar",
+        "timezone":  "Africa/Cairo",
+        "currency_code":  "EGP",
+        "phone":  "+201100000000",
+        "email":  "contact@alshifa.local",
+        "address":  "Giza and New Cairo, Egypt",
+        "is_active":  true
+    }
+]

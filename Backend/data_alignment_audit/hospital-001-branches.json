@@ -1,0 +1,30 @@
+﻿[
+    {
+        "id":  "5b222ac6-6fec-5233-a79a-70a7ad6a3ff8",
+        "provider_id":  "127990e5-d917-5e17-aa87-eebccf103b3b",
+        "code":  "GIZA",
+        "name_ar":  "Ù\u0085Ø³ØªØ´ÙÙ Ø§ÙØ´ÙØ§Ø¡ - Ø§ÙØ¬ÙØ²Ø©",
+        "name_en":  "Al-Shifa Hospital - Giza",
+        "address_ar":  "Ø§ÙØ¬ÙØ²Ø©Ø Ù\u0085ØµØ±",
+        "address_en":  "Giza, Egypt",
+        "governorate":  "Giza",
+        "phone":  "+201100000000",
+        "whatsapp":  "+201100000000",
+        "timezone":  "Africa/Cairo",
+        "is_active":  true
+    },
+    {
+        "id":  "122e01ae-2a8a-59e5-9f6a-adbb49c31f63",
+        "provider_id":  "127990e5-d917-5e17-aa87-eebccf103b3b",
+        "code":  "NEW_CAIRO",
+        "name_ar":  "Ù\u0085Ø³ØªØ´ÙÙ Ø§ÙØ´ÙØ§Ø¡ - Ø§ÙÙØ§ÙØ±Ø© Ø§ÙØ¬Ø¯ÙØ¯Ø©",
+        "name_en":  "Al-Shifa Hospital - New Cairo",
+        "address_ar":  "Ø§ÙÙØ§ÙØ±Ø© Ø§ÙØ¬Ø¯ÙØ¯Ø©Ø Ù\u0085ØµØ±",
+        "address_en":  "New Cairo, Egypt",
+        "governorate":  "Cairo",
+        "phone":  "+201100000001",
+        "whatsapp":  "+201100000001",
+        "timezone":  "Africa/Cairo",
+        "is_active":  true
+    }
+]

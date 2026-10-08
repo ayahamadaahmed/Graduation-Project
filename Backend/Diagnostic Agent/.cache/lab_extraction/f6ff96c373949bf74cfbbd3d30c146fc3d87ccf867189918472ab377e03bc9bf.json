@@ -1,0 +1,86 @@
+{
+  "document_type": "liver function test (lft)",
+  "results": [
+    {
+      "raw_name": "SERUM BILIRUBIN (TOTAL)",
+      "value": 0.9,
+      "unit": "mg/dl",
+      "reference_min": 0.2,
+      "reference_max": 1.2,
+      "reference_text": "0.2 - 1.2"
+    },
+    {
+      "raw_name": "SERUM BILIRUBIN (DIRECT)",
+      "value": 0.2,
+      "unit": "mg/dl",
+      "reference_min": 0.0,
+      "reference_max": 0.3,
+      "reference_text": "0 - 0.3"
+    },
+    {
+      "raw_name": "SERUM BILIRUBIN (INDIRECT)",
+      "value": 0.7,
+      "unit": "mg/dl",
+      "reference_min": 0.2,
+      "reference_max": 1.0,
+      "reference_text": "0.2 - 1"
+    },
+    {
+      "raw_name": "SGPT (ALT)",
+      "value": 36.0,
+      "unit": "U/l",
+      "reference_min": 13.0,
+      "reference_max": 40.0,
+      "reference_text": "13 - 40"
+    },
+    {
+      "raw_name": "SGOT (AST)",
+      "value": 32.0,
+      "unit": "U/l",
+      "reference_min": 0.0,
+      "reference_max": 37.0,
+      "reference_text": "0 - 37"
+    },
+    {
+      "raw_name": "SERUM ALKALINE PHOSPHATASE",
+      "value": 11.0,
+      "unit": "U/l",
+      "reference_min": null,
+      "reference_max": null,
+      "reference_text": "-"
+    },
+    {
+      "raw_name": "SERUM PROTEIN",
+      "value": 7.2,
+      "unit": "g/dl",
+      "reference_min": 6.4,
+      "reference_max": 8.3,
+      "reference_text": "6.4 - 8.3"
+    },
+    {
+      "raw_name": "SERUM ALBUMIN",
+      "value": 4.7,
+      "unit": "g/dl",
+      "reference_min": 3.5,
+      "reference_max": 5.2,
+      "reference_text": "3.5 - 5.2"
+    },
+    {
+      "raw_name": "GLOBULIN",
+      "value": 2.5,
+      "unit": "g/dl",
+      "reference_min": 1.8,
+      "reference_max": 3.6,
+      "reference_text": "1.8 - 3.6"
+    },
+    {
+      "raw_name": "A/G RATIO",
+      "value": 1.88,
+      "unit": "g/dl",
+      "reference_min": 1.1,
+      "reference_max": 2.1,
+      "reference_text": "1.1 - 2.1"
+    }
+  ],
+  "unreadable_fields": []
+}
