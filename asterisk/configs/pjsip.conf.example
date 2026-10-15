@@ -1,0 +1,26 @@
+[transport-udp]
+type = transport
+protocol = udp
+bind = 0.0.0.0:5060
+[1001]
+type = endpoint
+context = medmind-softphone
+disallow = all
+allow = ulaw
+allow = alaw
+allow = g722
+auth = 1001-auth
+aors = 1001
+direct_media = no
+rtp_symmetric = yes
+force_rport = yes
+rewrite_contact = yes
+[1001-auth]
+type = auth
+auth_type = userpass
+username = 1001
+password = CHANGE_ME_STRONG_PASSWORD
+[1001]
+type = aor
+max_contacts = 1
+remove_existing = yes

@@ -1,0 +1,9 @@
+[medmind_voice]
+type = websocket_client
+uri = ws://WINDOWS_HOST_IP:8010/asterisk/media
+protocols = media
+connection_type = per_call_config
+connection_timeout = 1000
+reconnect_interval = 500
+reconnect_attempts = 3
+tls_enabled = no
