@@ -3,7 +3,7 @@ from typing import Annotated
 from uuid import UUID
 import logging
 import time
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.api.dependencies import (
     CatalogServiceDependency,
@@ -11,11 +11,19 @@ from app.api.dependencies import (
 )
 from app.schemas.catalog import (
     BranchOut,
+    DepartmentOut,
+    DepartmentSpecialtyLinkIn,
     DoctorOut,
     ProviderOut,
     ServiceOut,
     SlotOut,
     SpecialtyOut,
+)
+from app.security.rbac import require_staff_roles
+from app.security.staff_context import StaffContext
+from app.services.catalog_service import (
+    DepartmentNotFoundError,
+    SpecialtyNotFoundError,
 )
 
 logger = logging.getLogger(
@@ -23,6 +31,18 @@ logger = logging.getLogger(
 )
 
 router = APIRouter(tags=["catalog"])
+
+DepartmentAdmin = Annotated[
+    StaffContext,
+    Depends(require_staff_roles("provider_admin")),
+]
+
+
+def _not_found(code: str, message: str) -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail={"code": code, "message": message},
+    )
 
 
 @router.get(
@@ -45,6 +65,60 @@ def list_branches(
 ) -> list[BranchOut]:
     rows = service.get_branches(provider.id)
     return [BranchOut.model_validate(row) for row in rows]
+
+
+@router.get(
+    "/departments",
+    response_model=list[DepartmentOut],
+)
+def list_departments(
+    provider: CurrentProvider,
+    service: CatalogServiceDependency,
+    branch_id: UUID | None = Query(default=None),
+) -> list[DepartmentOut]:
+    rows = service.get_departments(provider.id, branch_id)
+    return [DepartmentOut.model_validate(row) for row in rows]
+
+
+@router.get(
+    "/departments/{department_id}/specialties",
+    response_model=list[SpecialtyOut],
+)
+def list_department_specialties(
+    department_id: UUID,
+    provider: CurrentProvider,
+    service: CatalogServiceDependency,
+    branch_id: UUID | None = Query(default=None),
+) -> list[SpecialtyOut]:
+    try:
+        rows = service.get_department_specialties(provider.id, department_id, branch_id)
+    except DepartmentNotFoundError:
+        raise _not_found("DEPARTMENT_NOT_FOUND", "Department not found.") from None
+    return [SpecialtyOut.model_validate(row) for row in rows]
+
+
+@router.post(
+    "/departments/{department_id}/specialties",
+    response_model=SpecialtyOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def link_department_specialty(
+    department_id: UUID,
+    data: DepartmentSpecialtyLinkIn,
+    provider: CurrentProvider,
+    staff: DepartmentAdmin,
+    service: CatalogServiceDependency,
+    branch_id: UUID | None = Query(default=None),
+) -> SpecialtyOut:
+    try:
+        specialty = service.link_department_specialty(
+            provider.id, department_id, data.specialty_id, branch_id
+        )
+    except DepartmentNotFoundError:
+        raise _not_found("DEPARTMENT_NOT_FOUND", "Department not found.") from None
+    except SpecialtyNotFoundError:
+        raise _not_found("SPECIALTY_NOT_FOUND", "Specialty not found.") from None
+    return SpecialtyOut.model_validate(specialty)
 
 
 @router.get(
@@ -196,4 +270,11 @@ def list_slots(
         branch_id=branch_id,
         limit=limit,
     )
-    return [SlotOut.model_validate(row) for row in rows]
+    branches = {
+        branch.id: branch
+        for branch in service.get_branches(provider.id)
+    }
+    return [
+        SlotOut.from_slot(row, branches.get(row.branch_id))
+        for row in rows
+    ]

@@ -436,6 +436,7 @@ class PatientService:
     *,
     provider_id: UUID,
     patient_id: UUID,
+    national_id: str,
     patient_name: str | None,
     phone: str | None,
     language: str,
@@ -445,6 +446,59 @@ class PatientService:
         session = (
             self.repository.session
         )
+
+        # ========================================================
+        # 0. Identity: the national ID must belong to this patient
+        #
+        # A mismatch answers exactly like an unknown patient, so the
+        # endpoint never confirms which national ID a patient has.
+        # ========================================================
+
+        try:
+            national_id_hash = (
+                self.identity_protector
+                .hash_national_id(national_id)
+            )
+
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=(
+                    status
+                    .HTTP_422_UNPROCESSABLE_ENTITY
+                ),
+                detail={
+                    "code": "INVALID_NATIONAL_ID",
+                    "message": str(exc),
+                },
+            ) from exc
+
+        identified = (
+            self.repository
+            .get_active_by_national_id_hash(
+                national_id_hash
+            )
+        )
+
+        if (
+            identified is None
+            or identified.id != patient_id
+        ):
+
+            raise HTTPException(
+                status_code=
+                    status.HTTP_404_NOT_FOUND,
+
+                detail={
+                    "code":
+                        "PATIENT_NOT_FOUND",
+
+                    "message":
+                        (
+                            "No active patient "
+                            "was found."
+                        ),
+                },
+            )
 
         # ========================================================
         # 1. Resolve active patient

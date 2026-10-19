@@ -539,9 +539,12 @@ class CancelWorkflow:
 
         if is_cancel_request:
 
+            # A finished cancellation followed by a new cancel request
+            # starts a new operation (and so needs a fresh national ID).
             if (
                 state.operation_type
                 != "cancel_appointment"
+                or state.stage == "cancel_completed"
             ):
 
                 # Keep an existing internal reference when
@@ -558,6 +561,9 @@ class CancelWorkflow:
                 state.reset_operation(
                     preserve_patient=True,
                 )
+
+                # Fresh identity per sensitive operation.
+                state.forget_identity_proof()
 
                 state.operation_type = (
                     "cancel_appointment"

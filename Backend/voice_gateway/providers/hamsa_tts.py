@@ -10,6 +10,10 @@ from collections.abc import AsyncIterator
 import httpx
 
 from voice_gateway.config import load_environment
+from voice_gateway.log_safety import (
+    exception_fields,
+    install_log_safety,
+)
 
 
 # ============================================================
@@ -26,6 +30,7 @@ load_environment()
 logger = logging.getLogger(
     "medmind.voice_gateway.hamsa_tts"
 )
+install_log_safety(logger)
 
 
 # ============================================================
@@ -269,8 +274,9 @@ class HamsaTTS:
 
             except Exception:
                 logger.debug(
-                    "hamsa_tts_old_client_close_failed",
-                    exc_info=True,
+                    "hamsa_tts_old_client_close_failed "
+                    "%s",
+                    exception_fields(),
                 )
 
             logger.info(
@@ -430,9 +436,8 @@ class HamsaTTS:
 
                 logger.warning(
                     "hamsa_tts_warmup_failed "
-                    "error_type=%s",
-                    type(exc).__name__,
-                    exc_info=True,
+                    "%s",
+                    exception_fields(),
                 )
 
                 return False
@@ -445,8 +450,9 @@ class HamsaTTS:
                 except Exception:
 
                     logger.debug(
-                        "hamsa_tts_warmup_stream_close_failed",
-                        exc_info=True,
+                        "hamsa_tts_warmup_stream_close_failed "
+                        "%s",
+                        exception_fields(),
                     )
 
     # ========================================================
@@ -992,13 +998,12 @@ class HamsaTTS:
 
                 logger.error(
                     "hamsa_tts_stream_unexpected_failure "
-                    "error_type=%s "
                     "attempt=%d "
-                    "audio_yielded=%s",
-                    type(exc).__name__,
+                    "audio_yielded=%s "
+                    "%s",
                     attempt,
                     first_audio_yielded,
-                    exc_info=True,
+                    exception_fields(),
                 )
 
                 raise

@@ -325,6 +325,23 @@ class MedMindServiceRegistry:
 
             return service
 
+    async def clear_session_state(
+        self,
+        *,
+        tenant_id: str,
+        session_id: str,
+    ) -> None:
+        """Drop one session's conversation state (patient identity included).
+
+        Never creates a tenant service just to clear it.
+        """
+
+        async with self._lock:
+            service = self._services.get(tenant_id)
+
+        if service is not None:
+            await service.state_store.clear(session_id)
+
     async def close(
         self,
     ) -> None:

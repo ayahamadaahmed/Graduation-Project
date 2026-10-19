@@ -34,6 +34,13 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_access_token_minutes: int = 15
 
+    # Trusted gateways allowed to call the AI chat API, as
+    # "name=token;name2=token2" (e.g. voice_gateway=...). Unset means the
+    # AI chat API rejects every request (fail closed).
+    medmind_service_credentials: SecretStr | None = None
+    # A chat session expires after this many idle minutes.
+    ai_chat_session_idle_minutes: int = 60
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

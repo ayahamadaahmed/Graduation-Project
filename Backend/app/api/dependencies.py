@@ -20,6 +20,12 @@ from app.repositories.staff_audit_repository import (
 from app.services.staff_audit_service import (
     StaffAuditService,
 )
+from app.repositories.ehr_record_repository import (
+    EHRRecordRepository,
+)
+from app.services.ehr_record_service import (
+    EHRRecordService,
+)
 
 from fastapi.security import (
     HTTPAuthorizationCredentials,
@@ -436,6 +442,10 @@ def get_diagnostic_attachment_binding_service(
         encounter_repository=(
             encounter_repository
         ),
+        # Resolved only when a patient is being bound.
+        identity_protector_factory=(
+            get_patient_identity_protector
+        ),
     )
 
 
@@ -613,4 +623,18 @@ def get_staff_audit_service(
 StaffAuditServiceDependency = Annotated[
     StaffAuditService,
     Depends(get_staff_audit_service),
+]
+
+
+def get_ehr_record_service(
+    session: DatabaseSession,
+) -> EHRRecordService:
+    return EHRRecordService(
+        EHRRecordRepository(session)
+    )
+
+
+EHRRecordServiceDependency = Annotated[
+    EHRRecordService,
+    Depends(get_ehr_record_service),
 ]

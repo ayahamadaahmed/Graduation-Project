@@ -6,10 +6,13 @@ from typing import Any
 
 import httpx
 
+from voice_gateway.log_safety import install_log_safety
+
 
 logger = logging.getLogger(
     "medmind.voice_gateway.post_call"
 )
+install_log_safety(logger)
 
 
 class PostCallResponseError(
@@ -67,7 +70,24 @@ class PostCallClient:
         self,
         *,
         base_url: str | None = None,
+        service_token: str | None = None,
     ) -> None:
+        # Same trusted-service credential as the MedMind chat client.
+        # Without it the backend rejects post-call requests (fail closed).
+        self._service_token = (
+            service_token
+            if service_token is not None
+            else os.getenv(
+                "MEDMIND_SERVICE_TOKEN"
+            )
+        ) or None
+
+        if self._service_token is None:
+            logger.warning(
+                "post_call_service_token_missing "
+                "env=MEDMIND_SERVICE_TOKEN"
+            )
+
 
         self._base_url = (
             base_url
@@ -90,6 +110,22 @@ class PostCallClient:
             )
         )
 
+    def _headers(
+        self,
+        tenant_id: str,
+    ) -> dict[str, str]:
+        headers = {
+            "X-Tenant-ID":
+                tenant_id,
+        }
+
+        if self._service_token:
+            headers[
+                "X-MedMind-Service-Token"
+            ] = self._service_token
+
+        return headers
+
     async def send_booking_confirmation(
         self,
         *,
@@ -104,10 +140,9 @@ class PostCallClient:
                     "booking-confirmation"
                 ),
 
-                headers={
-                    "X-Tenant-ID":
-                        tenant_id,
-                },
+                headers=self._headers(
+                    tenant_id
+                ),
 
                 json={
                     "event_type":

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
 
@@ -33,6 +34,9 @@ from app.services.patient_branch_profile_service import (
 from app.repositories.appointment_repository import (
     AppointmentRepository,
 )
+from app.security.staff_context import (
+    StaffContext,
+)
 from app.schemas.appointment import (
     AppointmentCancelRequest,
     AppointmentCancelResponse,
@@ -49,6 +53,10 @@ from app.schemas.appointment import (
     AppointmentLookupRequest,
     AppointmentLookupResponse,
 )
+
+# Lab bookings use diagnostic services (see AppointmentRepository.lab_slot_service_is_valid).
+LAB_SERVICE_TYPE = "diagnostic"
+
 
 class AppointmentService:
 
@@ -280,15 +288,25 @@ class AppointmentService:
                     },
                 )
 
-            doctor_id = UUID(
-                str(slot["doctor_id"])
+            # NULL doctor = branch-level lab slot.
+            doctor_id = (
+                UUID(str(slot["doctor_id"]))
+                if slot["doctor_id"] is not None
+                else None
             )
 
             branch_id = UUID(
                 str(slot["branch_id"])
             )
 
-            if not (
+            if doctor_id is None:
+                self._ensure_lab_slot_service(
+                    provider_id=provider_id,
+                    branch_id=branch_id,
+                    service_id=data.service_id,
+                )
+
+            elif not (
                 self.repository
                 .doctor_branch_is_valid(
                     provider_id=provider_id,
@@ -319,7 +337,7 @@ class AppointmentService:
                     year=provider_now.year,
                 )
             )
-            if not (
+            if doctor_id is not None and not (
                 self.repository
                 .doctor_service_is_valid(
                     provider_id=provider_id,
@@ -1335,17 +1353,29 @@ class AppointmentService:
                     },
                 )
 
-            new_doctor_id = UUID(
-                str(new_slot["doctor_id"])
+            # NULL doctor = branch-level lab slot.
+            new_doctor_id = (
+                UUID(str(new_slot["doctor_id"]))
+                if new_slot["doctor_id"] is not None
+                else None
             )
 
             new_branch_id = UUID(
                 str(new_slot["branch_id"])
             )
 
-            # 3. Validate doctor and branch.
+            # 3. Validate doctor and branch
+            # (lab slot: branch + diagnostic service).
+            if new_doctor_id is None:
+                self._ensure_lab_slot_service(
+                    provider_id=provider_id,
+                    branch_id=new_branch_id,
+                    service_id=service_id,
+                )
+
             doctor_branch_valid = (
-                self.repository
+                new_doctor_id is None
+                or self.repository
                 .doctor_branch_is_valid(
                     provider_id=provider_id,
                     doctor_id=new_doctor_id,
@@ -1372,7 +1402,8 @@ class AppointmentService:
             # 4. Validate existing service
             # against the new doctor.
             doctor_service_valid = (
-                self.repository
+                new_doctor_id is None
+                or self.repository
                 .doctor_service_is_valid(
                     provider_id=provider_id,
                     doctor_id=new_doctor_id,
@@ -1530,8 +1561,10 @@ class AppointmentService:
                 new_slot_id=UUID(
                     str(result["new_slot_id"])
                 ),
-                doctor_id=UUID(
-                    str(result["doctor_id"])
+                doctor_id=(
+                    UUID(str(result["doctor_id"]))
+                    if result["doctor_id"]
+                    else None
                 ),
                 branch_id=UUID(
                     str(result["branch_id"])
@@ -1607,6 +1640,45 @@ class AppointmentService:
         except Exception:
             session.rollback()
             raise
+
+    def _ensure_lab_slot_service(
+        self,
+        *,
+        provider_id: UUID,
+        branch_id: UUID,
+        service_id: UUID,
+    ) -> None:
+        """
+        A slot without a doctor is a branch-level lab slot. It is
+        bookable only by a diagnostic lab, for one of its own active
+        diagnostic tests, at an active branch. Clinics and hospitals
+        therefore can never book a doctor-less slot.
+        """
+        if not (
+            self.repository
+            .lab_slot_service_is_valid(
+                provider_id=provider_id,
+                branch_id=branch_id,
+                service_id=service_id,
+            )
+        ):
+            raise HTTPException(
+                status_code=(
+                    status
+                    .HTTP_422_UNPROCESSABLE_ENTITY
+                ),
+                detail={
+                    "code": (
+                        "LAB_SLOT_SERVICE_MISMATCH"
+                    ),
+                    "message": (
+                        "This slot has no doctor. It can "
+                        "only be booked for an active lab "
+                        "test of this diagnostic lab."
+                    ),
+                },
+            )
+
     @staticmethod
     def _generate_reference(
         provider_timezone: str,
@@ -1664,6 +1736,120 @@ class AppointmentService:
 
         return AppointmentDetails(
             **appointment
+        )
+
+    # ========================================================
+    # STAFF READS (role / doctor / lab scope enforced here)
+    # ========================================================
+
+    @staticmethod
+    def _staff_read_scope(
+        staff: StaffContext,
+    ) -> dict[str, Any]:
+        """Repository filters for one staff member's appointment reads.
+
+        provider_admin / receptionist: the whole provider.
+        doctor: only appointments assigned to their doctor identity.
+        lab_staff: only appointments for lab (diagnostic) services.
+        Memberships carry no branch, so the provider is the widest scope.
+        """
+        if staff.role in ("provider_admin", "receptionist"):
+            return {}
+        if staff.role == "doctor" and staff.doctor_id is not None:
+            return {"scope_doctor_id": staff.doctor_id}
+        if staff.role == "lab_staff":
+            return {"scope_service_type": LAB_SERVICE_TYPE}
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "STAFF_PERMISSION_DENIED",
+                "message": (
+                    "This staff role is not allowed "
+                    "to read appointments."
+                ),
+            },
+        )
+
+    def get_booking_by_reference_for_staff(
+        self,
+        *,
+        staff: StaffContext,
+        appointment_reference: str,
+    ) -> AppointmentDetails:
+        scope = self._staff_read_scope(staff)
+        appointment = (
+            self.repository
+            .get_appointment_by_reference(
+                provider_id=staff.provider_id,
+                appointment_reference=(
+                    appointment_reference
+                    .strip()
+                    .upper()
+                ),
+                **scope,
+            )
+        )
+        if appointment is None:
+            # Out-of-scope appointments are reported exactly like missing ones.
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={
+                    "code": "APPOINTMENT_NOT_FOUND",
+                    "message": (
+                        "The appointment was not "
+                        "found for this provider."
+                    ),
+                },
+            )
+        return AppointmentDetails(**appointment)
+
+    def list_patient_bookings_for_staff(
+        self,
+        *,
+        staff: StaffContext,
+        patient_id: UUID,
+        include_cancelled: bool,
+        limit: int,
+    ) -> PatientAppointmentsResponse:
+        scope = self._staff_read_scope(staff)
+        patient = (
+            self.repository
+            .get_patient_for_provider(
+                provider_id=staff.provider_id,
+                patient_id=patient_id,
+            )
+        )
+        if patient is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={
+                    "code": (
+                        "PATIENT_NOT_FOUND_FOR_PROVIDER"
+                    ),
+                    "message": (
+                        "The active patient or "
+                        "provider profile was not found."
+                    ),
+                },
+            )
+        rows = (
+            self.repository
+            .list_appointments_by_patient(
+                provider_id=staff.provider_id,
+                patient_id=patient_id,
+                include_cancelled=include_cancelled,
+                limit=limit,
+                **scope,
+            )
+        )
+        appointments = [
+            AppointmentDetails(**row)
+            for row in rows
+        ]
+        return PatientAppointmentsResponse(
+            patient_id=patient_id,
+            count=len(appointments),
+            appointments=appointments,
         )
 
     def list_patient_bookings(

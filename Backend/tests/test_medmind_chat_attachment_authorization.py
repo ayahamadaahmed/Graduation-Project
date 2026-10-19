@@ -17,6 +17,10 @@ from app.api.dependencies import (
 )
 
 import app.api.routers.medmind_ai as medmind_router
+from app.security.service_auth import (
+    ServiceContext,
+    require_trusted_service,
+)
 
 from app.services.diagnostic_attachment_service import (
     DiagnosticAttachmentNotFoundError,
@@ -97,7 +101,19 @@ def clear_test_state():
         None,
     )
 
+    old_session_registry = getattr(
+        app.state,
+        "ai_chat_session_registry",
+        None,
+    )
+
     yield
+
+    if old_session_registry is None:
+        if hasattr(app.state, "ai_chat_session_registry"):
+            delattr(app.state, "ai_chat_session_registry")
+    else:
+        app.state.ai_chat_session_registry = old_session_registry
 
     app.dependency_overrides.clear()
 
@@ -333,6 +349,21 @@ class FakeRegistry:
 # ============================================================
 
 
+class FakeSessionRegistry:
+    """These tests are about attachments: the sessions they use are treated
+    as live and owned by the test gateway. Real session ownership is covered
+    in tests/test_ai_chat_service_auth.py."""
+
+    KNOWN = {"session-1", "another-session"}
+
+    def __init__(self):
+        self.calls = []
+
+    def resolve(self, *, session_id, provider_id, service_name, channel):
+        self.calls.append((session_id, provider_id, service_name, channel))
+        return object() if session_id in self.KNOWN else None
+
+
 def make_client(
     monkeypatch,
     *,
@@ -360,6 +391,16 @@ def make_client(
     app.dependency_overrides[
         get_current_provider
     ] = lambda: provider
+
+    # Chat now requires a trusted service and an owned session.
+    app.dependency_overrides[
+        require_trusted_service
+    ] = lambda: ServiceContext(
+        name="test_gateway",
+        allowed_tenants=frozenset({"clinic-001"}),
+    )
+
+    app.state.ai_chat_session_registry = FakeSessionRegistry()
 
     app.dependency_overrides[
         get_diagnostic_attachment_service

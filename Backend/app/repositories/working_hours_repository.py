@@ -1,7 +1,7 @@
 from datetime import date, time
 from uuid import UUID, uuid4
 
-from sqlalchemy import select, text
+from sqlalchemy import and_, or_, select, text
 from sqlalchemy.orm import Session
 from typing import List
 from app.models import (
@@ -9,11 +9,36 @@ from app.models import (
     Doctor,
     DoctorBranch,
     DoctorWorkingHour,
+    Provider,
 )
+
+def slot_owner_key(
+    doctor_id: object | None,
+    branch_id: object,
+) -> str:
+    """
+    Uniqueness owner of a slot: the doctor, or the branch for
+    branch-level lab slots (matches the filtered unique indexes).
+    """
+    if doctor_id is not None:
+        return str(doctor_id).lower()
+
+    return f"branch:{str(branch_id).lower()}"
+
 
 class WorkingHoursRepository:
     def __init__(self, session: Session) -> None:
         self.session = session
+
+    def provider_is_lab(
+        self,
+        provider_id: UUID,
+    ) -> bool:
+        statement = select(Provider.id).where(
+            Provider.id == provider_id,
+            Provider.org_type == "diagnostic_lab",
+        )
+        return self.session.scalar(statement) is not None
 
     def doctor_exists(
         self,
@@ -59,7 +84,7 @@ class WorkingHoursRepository:
     def find_overlapping_schedule(
         self,
         provider_id: UUID,
-        doctor_id: UUID,
+        doctor_id: UUID | None,
         branch_id: UUID,
         day_of_week: int,
         start_time: time,
@@ -135,7 +160,8 @@ class WorkingHoursRepository:
     ) -> List[DoctorWorkingHour]:
         statement = (
             select(DoctorWorkingHour)
-            .join(
+            # Outer joins: lab schedules are branch-level (doctor_id IS NULL).
+            .outerjoin(
                 Doctor,
                 Doctor.id == DoctorWorkingHour.doctor_id,
             )
@@ -144,6 +170,10 @@ class WorkingHoursRepository:
                 Branch.id == DoctorWorkingHour.branch_id,
             )
             .join(
+                Provider,
+                Provider.id == DoctorWorkingHour.provider_id,
+            )
+            .outerjoin(
                 DoctorBranch,
                 (
                     (DoctorBranch.provider_id == provider_id)
@@ -160,11 +190,19 @@ class WorkingHoursRepository:
             .where(
                 DoctorWorkingHour.provider_id == provider_id,
                 DoctorWorkingHour.is_active == 1,
-                Doctor.provider_id == provider_id,
-                Doctor.is_active == 1,
                 Branch.provider_id == provider_id,
                 Branch.is_active == 1,
-                DoctorBranch.is_active == 1,
+                or_(
+                    and_(
+                        DoctorWorkingHour.doctor_id.is_(None),
+                        Provider.org_type == "diagnostic_lab",
+                    ),
+                    and_(
+                        Doctor.provider_id == provider_id,
+                        Doctor.is_active == 1,
+                        DoctorBranch.is_active == 1,
+                    ),
+                ),
             )
         )
 
@@ -200,6 +238,7 @@ class WorkingHoursRepository:
             """
             SELECT
                 doctor_id,
+                branch_id,
                 slot_date,
                 start_time
             FROM dbo.doctor_availability_slots
@@ -235,7 +274,10 @@ class WorkingHoursRepository:
 
         return {
             (
-                str(row["doctor_id"]).lower(),
+                slot_owner_key(
+                    row["doctor_id"],
+                    row["branch_id"],
+                ),
                 row["slot_date"],
                 row["start_time"],
             )
@@ -246,7 +288,7 @@ class WorkingHoursRepository:
         self,
         *,
         provider_id: UUID,
-        doctor_id: UUID,
+        doctor_id: UUID | None,
         branch_id: UUID,
         working_hours_id: UUID,
         slot_date: date,
@@ -295,7 +337,11 @@ class WorkingHoursRepository:
             {
                 "id": str(uuid4()),
                 "provider_id": str(provider_id),
-                "doctor_id": str(doctor_id),
+                "doctor_id": (
+                    str(doctor_id)
+                    if doctor_id is not None
+                    else None
+                ),
                 "branch_id": str(branch_id),
                 "working_hours_id": str(
                     working_hours_id

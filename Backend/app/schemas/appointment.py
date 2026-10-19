@@ -132,7 +132,7 @@ class AppointmentRead(BaseModel):
     preferred_language: str | None = None
 
     slot_id: UUID
-    doctor_id: UUID
+    doctor_id: UUID | None = None
     branch_id: UUID
     branch_medical_record_number: str | None = None
     doctor_name: str | None = None
@@ -244,7 +244,7 @@ class AppointmentLookupResponse(BaseModel):
     # Trusted internal IDs
     # --------------------------------------------------------
 
-    doctor_id: UUID
+    doctor_id: UUID | None = None
     branch_id: UUID
 
     service_id: (
@@ -326,7 +326,7 @@ class AppointmentRescheduleResponse(BaseModel):
     old_slot_id: UUID
     new_slot_id: UUID
 
-    doctor_id: UUID
+    doctor_id: UUID | None = None
     branch_id: UUID
     service_id: UUID | None
 

@@ -13,6 +13,18 @@ from fastapi import HTTPException
 from app.api.routers import (
     post_call as post_call_router,
 )
+from app.security.service_auth import ServiceContext
+
+
+def authorized_caller(provider):
+    """An authenticated gateway. These tests call the handler directly, so the
+    auth/tenant dependency itself is tested in tests/test_post_call_service_auth.py."""
+    return ServiceContext(
+        name="voice_gateway",
+        allowed_tenants=frozenset({"clinic-001"}),
+    )
+
+
 from app.schemas.post_call import (
     PostCallBookingConfirmationRequest,
 )
@@ -129,7 +141,6 @@ class FakeN8NWhatsAppClient:
         *,
         provider_id,
         payload,
-        message,
     ):
 
         self.calls.append(
@@ -139,9 +150,6 @@ class FakeN8NWhatsAppClient:
 
                 "payload":
                     payload,
-
-                "message":
-                    message,
             }
         )
 
@@ -241,6 +249,9 @@ async def test_post_call_endpoint_delivers_to_n8n(
             provider=
                 provider,
 
+            caller=
+                authorized_caller(provider),
+
             appointment_service=
                 appointment_service,
         )
@@ -336,19 +347,12 @@ async def test_post_call_endpoint_delivers_to_n8n(
         == "ar"
     )
 
-    # Formatter must already have built the message.
+    # The client receives structured booking data (n8n renders the text).
     assert (
-        "تم تأكيد حجزك"
-        in call[
-            "message"
-        ]
-    )
-
-    assert (
-        "APT-260828-ABC123"
-        in call[
-            "message"
-        ]
+        call[
+            "payload"
+        ].appointment_reference
+        == "APT-260828-ABC123"
     )
 
     # Client must always close.
@@ -401,6 +405,9 @@ async def test_post_call_endpoint_returns_503_when_n8n_fails(
 
                 provider=
                     provider,
+
+                caller=
+                    authorized_caller(provider),
 
                 appointment_service=
                     appointment_service,

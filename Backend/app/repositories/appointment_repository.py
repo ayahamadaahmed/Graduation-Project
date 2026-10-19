@@ -6,6 +6,21 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 
+def _scope_params(
+    scope_doctor_id: UUID | None,
+    scope_service_type: str | None,
+) -> dict[str, Any]:
+    """Bind values for the optional staff read-scope filters (None = no filter)."""
+    return {
+        "scope_doctor_id": (
+            str(scope_doctor_id)
+            if scope_doctor_id is not None
+            else None
+        ),
+        "scope_service_type": scope_service_type,
+    }
+
+
 class AppointmentRepository:
     def __init__(
         self,
@@ -176,6 +191,53 @@ class AppointmentRepository:
 
         return row is not None
 
+    def lab_slot_service_is_valid(
+        self,
+        *,
+        provider_id: UUID,
+        branch_id: UUID,
+        service_id: UUID,
+    ) -> bool:
+        """
+        Branch-level lab slot (no doctor): the provider must be a
+        diagnostic lab, the branch active, and the service an active
+        diagnostic test of the same lab.
+        """
+        statement = text(
+            """
+            SELECT TOP 1
+                service.id
+            FROM dbo.services AS service
+
+            INNER JOIN dbo.providers AS provider
+                ON provider.id = service.provider_id
+                AND provider.org_type = 'diagnostic_lab'
+                AND provider.is_active = 1
+
+            INNER JOIN dbo.branches AS branch
+                ON branch.id = :branch_id
+                AND branch.provider_id = :provider_id
+                AND branch.is_active = 1
+
+            WHERE
+                service.id = :service_id
+                AND service.provider_id = :provider_id
+                AND service.service_type = 'diagnostic'
+                AND service.is_active = 1;
+            """
+        )
+
+        row = self.session.execute(
+            statement,
+            {
+                "provider_id": str(provider_id),
+                "branch_id": str(branch_id),
+                "service_id": str(service_id),
+            },
+        ).first()
+
+        return row is not None
+
     def insert_appointment(
         self,
         *,
@@ -186,7 +248,7 @@ class AppointmentRepository:
         patient_name: str,
         phone: str,
         slot_id: UUID,
-        doctor_id: UUID,
+        doctor_id: UUID | None,
         branch_id: UUID,
         service_id: UUID,
         scheduled_date: Any,
@@ -280,7 +342,11 @@ class AppointmentRepository:
                 "patient_name": patient_name,
                 "phone": phone,
                 "slot_id": str(slot_id),
-                "doctor_id": str(doctor_id),
+                "doctor_id": (
+                    str(doctor_id)
+                    if doctor_id is not None
+                    else None
+                ),
                 "branch_id": str(branch_id),
                 "service_id": str(service_id),
                 "scheduled_date": scheduled_date,
@@ -474,7 +540,7 @@ class AppointmentRepository:
             INNER JOIN dbo.patients AS patient
                 ON patient.id = appointment.patient_id
 
-            INNER JOIN dbo.doctors AS doctor
+            LEFT JOIN dbo.doctors AS doctor
                 ON doctor.id = appointment.doctor_id
                 AND doctor.provider_id =
                     appointment.provider_id
@@ -754,7 +820,7 @@ class AppointmentRepository:
         appointment_id: UUID,
         old_slot_id: UUID,
         new_slot_id: UUID,
-        doctor_id: UUID,
+        doctor_id: UUID | None,
         branch_id: UUID,
         scheduled_date: Any,
         start_time: Any,
@@ -798,7 +864,11 @@ class AppointmentRepository:
                 ),
                 "old_slot_id": str(old_slot_id),
                 "new_slot_id": str(new_slot_id),
-                "doctor_id": str(doctor_id),
+                "doctor_id": (
+                    str(doctor_id)
+                    if doctor_id is not None
+                    else None
+                ),
                 "branch_id": str(branch_id),
                 "scheduled_date": scheduled_date,
                 "start_time": start_time,
@@ -953,6 +1023,8 @@ class AppointmentRepository:
         *,
         provider_id: UUID,
         appointment_reference: str,
+        scope_doctor_id: UUID | None = None,
+        scope_service_type: str | None = None,
     ) -> dict[str, Any] | None:
         statement = text(
             """
@@ -1046,7 +1118,7 @@ class AppointmentRepository:
             INNER JOIN dbo.patients AS patient
                 ON patient.id = appointment.patient_id
 
-            INNER JOIN dbo.doctors AS doctor
+            LEFT JOIN dbo.doctors AS doctor
                 ON doctor.id = appointment.doctor_id
                 AND doctor.provider_id =
                     appointment.provider_id
@@ -1081,7 +1153,16 @@ class AppointmentRepository:
                     :provider_id
 
                 AND appointment.appointment_reference =
-                    :appointment_reference;
+                    :appointment_reference
+
+                AND (
+                    :scope_doctor_id IS NULL
+                    OR appointment.doctor_id = :scope_doctor_id
+                )
+                AND (
+                    :scope_service_type IS NULL
+                    OR service.service_type = :scope_service_type
+                );
             """
         )
 
@@ -1093,6 +1174,10 @@ class AppointmentRepository:
                 ),
                 "appointment_reference": (
                     appointment_reference
+                ),
+                **_scope_params(
+                    scope_doctor_id,
+                    scope_service_type,
                 ),
             },
         ).mappings().first()
@@ -1109,6 +1194,8 @@ class AppointmentRepository:
         future_only: bool = False,
         cutoff_date: date | None = None,
         cutoff_time: time | None = None,
+        scope_doctor_id: UUID | None = None,
+        scope_service_type: str | None = None,
     ) -> list[dict[str, Any]]:
 
         if future_only and (
@@ -1210,7 +1297,7 @@ class AppointmentRepository:
             INNER JOIN dbo.patients AS patient
                 ON patient.id = appointment.patient_id
 
-            INNER JOIN dbo.doctors AS doctor
+            LEFT JOIN dbo.doctors AS doctor
                 ON doctor.id = appointment.doctor_id
                 AND doctor.provider_id =
                     appointment.provider_id
@@ -1263,6 +1350,14 @@ class AppointmentRepository:
                         AND appointment.start_time >= :cutoff_time
                     )
                 )
+                AND (
+                    :scope_doctor_id IS NULL
+                    OR appointment.doctor_id = :scope_doctor_id
+                )
+                AND (
+                    :scope_service_type IS NULL
+                    OR service.service_type = :scope_service_type
+                )
 
             ORDER BY
                 CASE
@@ -1312,6 +1407,10 @@ class AppointmentRepository:
                 ),
                 "cutoff_date": cutoff_date,
                 "cutoff_time": cutoff_time,
+                **_scope_params(
+                    scope_doctor_id,
+                    scope_service_type,
+                ),
             }
         ).mappings().all()
 

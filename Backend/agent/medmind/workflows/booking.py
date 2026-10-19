@@ -208,9 +208,16 @@ class BookingWorkflow:
         self,
         *,
         tools: MCPToolExecutor,
+        provider_type: str | None = None,
     ) -> None:
 
         self.tools = tools
+
+        # Diagnostic labs book by branch + test, without a doctor.
+        self.is_lab = (
+            (provider_type or "").lower()
+            in {"lab", "diagnostic_lab"}
+        )
 
     # ========================================================
     # PUBLIC ENTRY
@@ -378,6 +385,19 @@ class BookingWorkflow:
 
         if (
             state.stage
+            == "awaiting_branch"
+        ):
+
+            return await (
+                self._handle_branch(
+                    state=state,
+                    nlu=nlu,
+                    user_message=user_message,
+                )
+            )
+
+        if (
+            state.stage
             == "awaiting_time"
         ):
 
@@ -517,6 +537,10 @@ class BookingWorkflow:
             "awaiting_date":
                 3,
 
+            # Lab only: chosen between date and time.
+            "awaiting_branch":
+                3.5,
+
             "awaiting_time":
                 4,
 
@@ -572,6 +596,14 @@ class BookingWorkflow:
                     field_name
                 ]
                 <= current_stage_rank
+            )
+            # Labs have no specialty / doctor step.
+            and not (
+                self.is_lab
+                and field_name in {
+                    "specialty_name",
+                    "doctor_name",
+                }
             )
         ]
 
@@ -674,6 +706,20 @@ class BookingWorkflow:
         state: SessionState,
         nlu: NLUResult,
     ) -> WorkflowResult:
+
+        # Labs: no specialty / doctor. Date -> branch -> time -> test.
+        if self.is_lab:
+
+            state.stage = (
+                "awaiting_date"
+            )
+
+            return await (
+                self._handle_date(
+                    state=state,
+                    nlu=nlu,
+                )
+            )
 
         context = resolve_effective_context(
             state=state,
@@ -1426,6 +1472,19 @@ class BookingWorkflow:
                     "invalid_date",
             )
 
+        # Labs book branch-level slots (no doctor).
+        if self.is_lab:
+
+            return await (
+                self._load_lab_slots(
+                    state=state,
+                    nlu=nlu,
+                    slot_date=(
+                        resolved_date.isoformat()
+                    ),
+                )
+            )
+
         # ----------------------------------------------------
         # Defensive check
         # ----------------------------------------------------
@@ -1637,6 +1696,419 @@ class BookingWorkflow:
     # ========================================================
     # TIME
     # ========================================================
+
+    # ========================================================
+    # LAB: BRANCH-LEVEL SLOTS (no doctor)
+    # ========================================================
+
+    @staticmethod
+    def _slot_branch_name(
+        slot,
+        language: str,
+    ) -> str:
+
+        if language == "en":
+            return (
+                slot.branch_name_en
+                or slot.branch_name_ar
+                or slot.branch_id
+            )
+
+        return (
+            slot.branch_name_ar
+            or slot.branch_name_en
+            or slot.branch_id
+        )
+
+    @staticmethod
+    def _lab_branches(
+        state: SessionState,
+    ) -> list:
+        """One representative slot per branch, in trusted order."""
+
+        branches = {}
+
+        for slot in state.recent_slots:
+            branches.setdefault(
+                slot.branch_id,
+                slot,
+            )
+
+        return list(
+            branches.values()
+        )
+
+    def _service_filter(
+        self,
+        state: SessionState,
+    ) -> dict[str, Any]:
+
+        if self.is_lab:
+            return {
+                "service_type": "diagnostic",
+            }
+
+        return {
+            "doctor_id": state.doctor_id,
+        }
+
+    @staticmethod
+    def _selected_slot(
+        state: SessionState,
+    ):
+
+        for slot in state.recent_slots:
+            if slot.id == state.slot_id:
+                return slot
+
+        return None
+
+    def _branch_choice_reply(
+        self,
+        *,
+        state: SessionState,
+        branches: list,
+        intro_ar: str,
+        intro_en: str,
+    ) -> WorkflowResult:
+
+        names = [
+            self._slot_branch_name(
+                slot,
+                state.language,
+            )
+            for slot in branches
+        ]
+
+        numbered = "\n".join(
+            f"{index}. {name}"
+            for index, name
+            in enumerate(names, start=1)
+        )
+
+        return WorkflowResult(
+            reply=self._message(
+                state.language,
+                ar=(
+                    f"{intro_ar}\n{numbered}\n"
+                    "تحبي أنهي فرع؟"
+                ),
+                en=(
+                    f"{intro_en}\n{numbered}\n"
+                    "Which branch would you like?"
+                ),
+            ),
+            response_type=
+                "ask_branch",
+            data={
+                "date":
+                    state.slot_date,
+                "branches":
+                    names,
+            },
+        )
+
+    async def _load_lab_slots(
+        self,
+        *,
+        state: SessionState,
+        nlu: NLUResult,
+        slot_date: str,
+    ) -> WorkflowResult:
+
+        slots = await (
+            self.tools.call(
+                "list_available_slots",
+                slot_date=slot_date,
+                limit=100,
+            )
+        )
+
+        apply_tool_observation(
+            state=state,
+            tool_name=
+                "list_available_slots",
+            data=
+                slots,
+        )
+
+        # A lab books only branch-level (doctor-less) slots.
+        state.recent_slots = [
+            slot
+            for slot in state.recent_slots
+            if slot.doctor_id is None
+        ]
+
+        state.slot_date = slot_date
+        state.slot_id = None
+        state.slot_time = None
+
+        if not state.recent_slots:
+
+            state.stage = (
+                "awaiting_date"
+            )
+
+            return WorkflowResult(
+                reply=self._message(
+                    state.language,
+                    ar=(
+                        f"مفيش مواعيد متاحة يوم "
+                        f"{slot_date}. تحبي يوم تاني؟"
+                    ),
+                    en=(
+                        f"There are no available slots "
+                        f"on {slot_date}. "
+                        "Would you like another date?"
+                    ),
+                ),
+                response_type=
+                    "no_slots",
+                data={
+                    "date":
+                        slot_date,
+                },
+            )
+
+        branches = self._lab_branches(
+            state
+        )
+
+        # The same time can exist at several branches:
+        # the branch must be chosen before the time.
+        if len(branches) > 1:
+
+            state.stage = (
+                "awaiting_branch"
+            )
+
+            return self._branch_choice_reply(
+                state=state,
+                branches=branches,
+                intro_ar=(
+                    f"فيه مواعيد يوم {slot_date} "
+                    "في الفروع دي:"
+                ),
+                intro_en=(
+                    f"There are slots on {slot_date} "
+                    "at these branches:"
+                ),
+            )
+
+        return await (
+            self._present_lab_times(
+                state=state,
+                nlu=nlu,
+            )
+        )
+
+    async def _present_lab_times(
+        self,
+        *,
+        state: SessionState,
+        nlu: NLUResult,
+    ) -> WorkflowResult:
+
+        state.stage = (
+            "awaiting_time"
+        )
+
+        context = (
+            resolve_effective_context(
+                state=state,
+                nlu=nlu,
+            )
+        )
+
+        if context.time_text:
+            return await (
+                self._handle_time(
+                    state=state,
+                    nlu=nlu,
+                )
+            )
+
+        available_times = [
+            slot.start_time[:5]
+            for slot in state.recent_slots
+        ]
+
+        branch_name = self._slot_branch_name(
+            state.recent_slots[0],
+            state.language,
+        )
+
+        return WorkflowResult(
+            reply=self._message(
+                state.language,
+                ar=(
+                    f"المواعيد المتاحة في "
+                    f"{branch_name} يوم "
+                    f"{state.slot_date}: "
+                    + "، ".join(available_times)
+                    + ". أنهي ميعاد يناسبك؟"
+                ),
+                en=(
+                    f"Available times at "
+                    f"{branch_name} on "
+                    f"{state.slot_date} are: "
+                    + ", ".join(available_times)
+                    + ". Which time suits you?"
+                ),
+            ),
+            response_type=
+                "ask_time",
+            data={
+                "date":
+                    state.slot_date,
+                "branch_id":
+                    state.recent_slots[0].branch_id,
+                "available_times":
+                    available_times,
+                "slot_count":
+                    len(state.recent_slots),
+            },
+        )
+
+    @staticmethod
+    def _match_branch(
+        text: str,
+        branches: list,
+    ):
+
+        digits = str.maketrans(
+            "٠١٢٣٤٥٦٧٨٩",
+            "0123456789",
+        )
+
+        normalized = normalize_text(
+            (text or "").translate(digits)
+        )
+
+        if not normalized:
+            return None
+
+        if normalized.isdigit():
+
+            index = int(normalized)
+
+            if 1 <= index <= len(branches):
+                return branches[index - 1]
+
+            return None
+
+        matches = []
+
+        for slot in branches:
+
+            labels = set()
+
+            for name in (
+                slot.branch_name_ar,
+                slot.branch_name_en,
+            ):
+                if not name:
+                    continue
+
+                labels.add(
+                    normalize_text(name)
+                )
+
+                # "Alfa Labs - Maadi" -> "maadi"
+                for part in name.split("-"):
+
+                    part = normalize_text(part)
+
+                    if len(part) >= 3:
+                        labels.add(part)
+
+            if any(
+                label
+                and (
+                    label in normalized
+                    or (
+                        len(normalized) >= 3
+                        and normalized in label
+                    )
+                )
+                for label in labels
+            ):
+                matches.append(slot)
+
+        # Parts shared by every branch (e.g. the lab name)
+        # match all of them: only a unique match counts.
+        if len(matches) == 1:
+            return matches[0]
+
+        return None
+
+    async def _handle_branch(
+        self,
+        *,
+        state: SessionState,
+        nlu: NLUResult,
+        user_message: str = "",
+    ) -> WorkflowResult:
+
+        branches = self._lab_branches(
+            state
+        )
+
+        if not branches:
+
+            state.stage = (
+                "awaiting_date"
+            )
+
+            return WorkflowResult(
+                reply=self._message(
+                    state.language,
+                    ar=(
+                        "قولي اليوم أو التاريخ "
+                        "اللي يناسبك."
+                    ),
+                    en=(
+                        "Please tell me the date "
+                        "you prefer."
+                    ),
+                ),
+                response_type=
+                    "date_required",
+            )
+
+        chosen = self._match_branch(
+            user_message,
+            branches,
+        )
+
+        if chosen is None:
+
+            return self._branch_choice_reply(
+                state=state,
+                branches=branches,
+                intro_ar=(
+                    "مش متأكد أنهي فرع. "
+                    "اختاري واحد من دول:"
+                ),
+                intro_en=(
+                    "I'm not sure which branch. "
+                    "Please choose one of these:"
+                ),
+            )
+
+        state.recent_slots = [
+            slot
+            for slot in state.recent_slots
+            if slot.branch_id
+            == chosen.branch_id
+        ]
+
+        return await (
+            self._present_lab_times(
+                state=state,
+                nlu=nlu,
+            )
+        )
 
     async def _handle_time(
         self,
@@ -1914,10 +2386,10 @@ class BookingWorkflow:
     ) -> WorkflowResult:
 
         # ----------------------------------------------------
-        # Doctor required
+        # Doctor required (labs have none)
         # ----------------------------------------------------
 
-        if not state.doctor_id:
+        if not state.doctor_id and not self.is_lab:
 
             state.stage = (
                 "awaiting_doctor"
@@ -1950,8 +2422,7 @@ class BookingWorkflow:
             self.tools.call(
                 "list_services",
 
-                doctor_id=
-                    state.doctor_id,
+                **self._service_filter(state),
 
                 limit=100,
             )
@@ -1982,11 +2453,19 @@ class BookingWorkflow:
                     state.language,
 
                     ar=(
+                        "مش لاقي تحليل متاح "
+                        "حالياً."
+                        if self.is_lab
+                        else
                         "مش لاقي خدمة متاحة "
                         "للدكتور ده حالياً."
                     ),
 
                     en=(
+                        "I couldn't find an "
+                        "available test."
+                        if self.is_lab
+                        else
                         "I couldn't find an "
                         "available service for "
                         "this doctor."
@@ -3742,6 +4221,42 @@ class BookingWorkflow:
     # PREPARE BOOKING CONFIRMATION
     # ========================================================
 
+    def _confirmation_party(
+        self,
+        state: SessionState,
+        style: str,
+    ) -> str:
+        """Doctor line for clinics/hospitals, branch line for labs."""
+
+        if not self.is_lab:
+            return {
+                "voice_en": f"with {state.doctor_name}, ",
+                "voice_ar": f"مع {state.doctor_name}، ",
+                "text_en": f"Doctor: {state.doctor_name}\n",
+                "text_ar": f"الدكتور: {state.doctor_name}\n",
+            }[style]
+
+        slot = self._selected_slot(state)
+
+        branch = (
+            self._slot_branch_name(
+                slot,
+                state.language,
+            )
+            if slot is not None
+            else ""
+        )
+
+        if not branch:
+            return ""
+
+        return {
+            "voice_en": f"at {branch}, ",
+            "voice_ar": f"في {branch}، ",
+            "text_en": f"Branch: {branch}\n",
+            "text_ar": f"الفرع: {branch}\n",
+        }[style]
+
     def _prepare_confirmation(
         self,
         *,
@@ -3770,6 +4285,12 @@ class BookingWorkflow:
             "patient_id":
                 state.patient_id,
         }
+
+        # Lab bookings have no doctor.
+        if self.is_lab:
+            required_values.pop(
+                "doctor_id"
+            )
 
         missing = [
             key
@@ -3854,7 +4375,7 @@ class BookingWorkflow:
             reply = (
                 f"Okay. I'll confirm the booking for "
                 f"{state.patient_name}, "
-                f"with {state.doctor_name}, "
+                f"{self._confirmation_party(state, 'voice_en')}"
                 f"on {state.slot_date}, "
                 f"at {state.slot_time}. "
                 "Is that correct?"
@@ -3869,7 +4390,7 @@ class BookingWorkflow:
             reply = (
                 f"تمام، هأكد الحجز باسم "
                 f"{state.patient_name}، "
-                f"مع {state.doctor_name}، "
+                f"{self._confirmation_party(state, 'voice_ar')}"
                 f"يوم {state.slot_date}، "
                 f"الساعة {state.slot_time}. "
                 "البيانات دي صح؟"
@@ -3883,7 +4404,7 @@ class BookingWorkflow:
 
             reply = (
                 "Please review the booking:\n\n"
-                f"Doctor: {state.doctor_name}\n"
+                f"{self._confirmation_party(state, 'text_en')}"
                 f"Service: {state.service_name}\n"
                 f"Date: {state.slot_date}\n"
                 f"Time: {state.slot_time}\n"
@@ -3899,7 +4420,7 @@ class BookingWorkflow:
 
             reply = (
                 "راجعي بيانات الحجز:\n\n"
-                f"الدكتور: {state.doctor_name}\n"
+                f"{self._confirmation_party(state, 'text_ar')}"
                 f"الخدمة: {state.service_name}\n"
                 f"التاريخ: {state.slot_date}\n"
                 f"الساعة: {state.slot_time}\n"
@@ -4503,6 +5024,8 @@ class BookingWorkflow:
         if (
             not state.patient_id
             or
+            not state.national_id
+            or
             not state.pending_patient_profile_updates
         ):
 
@@ -4536,6 +5059,9 @@ class BookingWorkflow:
                     str(
                         state.patient_id
                     ),
+
+                national_id=
+                    state.national_id,
 
                 patient_name=
                     patient_name,
@@ -4693,6 +5219,13 @@ class BookingWorkflow:
             state.service_name
         )
 
+        # Lab corrections stay at the booked branch.
+        original_lab_slot = (
+            self._selected_slot(state)
+            if self.is_lab
+            else None
+        )
+
         # Confirmation is temporarily suspended while
         # corrections are validated.
         state.awaiting_confirmation = False
@@ -4831,7 +5364,8 @@ class BookingWorkflow:
 
         doctor_changed = False
 
-        if entities.doctor_name:
+        # Labs have no doctor to correct.
+        if entities.doctor_name and not self.is_lab:
 
             if not state.specialty_id:
 
@@ -5024,7 +5558,7 @@ class BookingWorkflow:
 
         if schedule_changed:
 
-            if not state.doctor_id:
+            if not state.doctor_id and not self.is_lab:
 
                 self._restore_create_confirmation(
                     state
@@ -5122,12 +5656,25 @@ class BookingWorkflow:
             # Reload REAL slots from backend.
             # ====================================================
 
+            slot_filter = (
+                {
+                    "doctor_id":
+                        state.doctor_id,
+                }
+                if not self.is_lab
+                else {
+                    "branch_id":
+                        original_lab_slot.branch_id,
+                }
+                if original_lab_slot is not None
+                else {}
+            )
+
             slots = await (
                 self.tools.call(
                     "list_available_slots",
 
-                    doctor_id=
-                        state.doctor_id,
+                    **slot_filter,
 
                     slot_date=
                         resolved_date_text,
@@ -5145,6 +5692,13 @@ class BookingWorkflow:
                 data=
                     slots,
             )
+
+            if self.is_lab:
+                state.recent_slots = [
+                    slot
+                    for slot in state.recent_slots
+                    if slot.doctor_id is None
+                ]
 
             state.slot_date = (
                 resolved_date_text
@@ -5168,15 +5722,17 @@ class BookingWorkflow:
                         state.language,
 
                         ar=(
-                            f"مفيش مواعيد متاحة مع "
-                            f"{state.doctor_name} يوم "
+                            f"مفيش مواعيد متاحة "
+                            f"{'' if self.is_lab else 'مع ' + str(state.doctor_name) + ' '}"
+                            f"يوم "
                             f"{resolved_date_text}. "
                             "تحبي يوم تاني؟"
                         ),
 
                         en=(
-                            f"There are no available slots with "
-                            f"{state.doctor_name} on "
+                            f"There are no available slots "
+                            f"{'' if self.is_lab else 'with ' + str(state.doctor_name) + ' '}"
+                            f"on "
                             f"{resolved_date_text}. "
                             "Would you like another date?"
                         ),

@@ -22,6 +22,8 @@ def test_late_deepgram_final_keeps_original_turn_owner():
 
     stt._on_transcript = None
 
+    stt._benchmark_log_transcripts = False
+
     stt._on_transcript_with_owner = (
         lambda text, is_final, owner: (
             received.append(

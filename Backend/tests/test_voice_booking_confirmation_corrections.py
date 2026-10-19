@@ -1500,6 +1500,12 @@ async def test_phone_correction_request_full_flow(
         == "01123456789"
     )
 
+    # The backend verifies identity with the patient's national ID.
+    assert (
+        kwargs["national_id"]
+        == "29901010000001"
+    )
+
     assert (
         kwargs["channel"]
         == "voice"

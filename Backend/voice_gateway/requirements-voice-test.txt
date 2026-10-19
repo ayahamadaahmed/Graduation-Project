@@ -1,0 +1,5 @@
+# Voice Gateway test dependencies (runtime + pytest), same pins as the backend .venv.
+-r requirements-voice.txt
+
+pytest==8.4.2
+pytest-asyncio==1.3.0

@@ -436,9 +436,12 @@ class RescheduleWorkflow:
 
         if is_reschedule_request:
 
+            # A finished reschedule followed by a new reschedule request
+            # starts a new operation (and so needs a fresh national ID).
             if (
                 state.operation_type
                 != "reschedule_appointment"
+                or state.stage == "reschedule_completed"
             ):
 
                 previous_reference = (
@@ -451,6 +454,9 @@ class RescheduleWorkflow:
                 state.reset_operation(
                     preserve_patient=True,
                 )
+
+                # Fresh identity per sensitive operation.
+                state.forget_identity_proof()
 
                 state.operation_type = (
                     "reschedule_appointment"

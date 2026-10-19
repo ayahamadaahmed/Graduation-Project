@@ -34,6 +34,7 @@ def list_public_providers(
     org_type: Literal[
         "clinic",
         "hospital",
+        "diagnostic_lab",
     ] = Query(...),
 ) -> list[PublicProviderOut]:
 

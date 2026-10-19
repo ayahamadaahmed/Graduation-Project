@@ -110,6 +110,14 @@ class PatientProfileUpdateRequest(
     BaseModel
 ):
 
+    # Proof of identity for the patient in the URL (same contract as
+    # appointment cancel / reschedule). Never logged or returned.
+    national_id: str = Field(
+        min_length=14,
+        max_length=14,
+        repr=False,
+    )
+
     patient_name: str | None = Field(
         default=None,
         min_length=2,

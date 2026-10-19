@@ -2,6 +2,18 @@ from app.models.diagnostic_attachment import (
     DiagnosticAttachment,
 )
 
+def _single_column_fk(column):
+    """Return the plain single-column foreign key of a column.
+
+    Some columns (provider_id, encounter_id, ...) are also part of composite
+    foreign keys that tie a record to the same provider / patient.
+    """
+    return next(
+        fk
+        for fk in column.foreign_keys
+        if len(fk.constraint.columns) == 1
+    )
+
 
 def test_diagnostic_attachment_table_name():
     assert (
@@ -55,23 +67,11 @@ def test_diagnostic_attachment_nullability():
 def test_diagnostic_attachment_foreign_keys():
     table = DiagnosticAttachment.__table__
 
-    provider_fk = next(
-        iter(
-            table.c.provider_id.foreign_keys
-        )
-    )
+    provider_fk = _single_column_fk(table.c.provider_id)
 
-    patient_fk = next(
-        iter(
-            table.c.patient_id.foreign_keys
-        )
-    )
+    patient_fk = _single_column_fk(table.c.patient_id)
 
-    encounter_fk = next(
-        iter(
-            table.c.encounter_id.foreign_keys
-        )
-    )
+    encounter_fk = _single_column_fk(table.c.encounter_id)
 
     assert (
         provider_fk.target_fullname

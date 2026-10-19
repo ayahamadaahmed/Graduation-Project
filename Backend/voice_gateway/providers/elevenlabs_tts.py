@@ -8,10 +8,16 @@ from collections.abc import AsyncIterator
 
 import httpx
 
+from voice_gateway.log_safety import (
+    exception_fields,
+    install_log_safety,
+)
+
 
 logger = logging.getLogger(
     "medmind.voice_gateway.elevenlabs_tts"
 )
+install_log_safety(logger)
 
 
 class ElevenLabsTTS:
@@ -286,10 +292,10 @@ class ElevenLabsTTS:
 
         except httpx.RequestError as exc:
 
-            logger.exception(
+            logger.error(
                 "elevenlabs_tts_network_error "
-                "error_type=%s",
-                type(exc).__name__,
+                "%s",
+                exception_fields(),
             )
 
             raise
@@ -678,14 +684,14 @@ class ElevenLabsTTS:
 
                 if audio_started:
 
-                    logger.exception(
+                    logger.error(
                         "elevenlabs_tts_stream_"
                         "network_error_after_audio "
-                        "error_type=%s "
                         "attempt=%d "
-                        "retry=false",
-                        type(exc).__name__,
+                        "retry=false "
+                        "%s",
                         attempt,
+                        exception_fields(),
                     )
 
                     raise
@@ -701,16 +707,16 @@ class ElevenLabsTTS:
                     >= self._stream_max_attempts
                 ):
 
-                    logger.exception(
+                    logger.error(
                         "elevenlabs_tts_stream_"
                         "network_error "
-                        "error_type=%s "
                         "attempt=%d "
                         "max_attempts=%d "
-                        "retry=false",
-                        type(exc).__name__,
+                        "retry=false "
+                        "%s",
                         attempt,
                         self._stream_max_attempts,
+                        exception_fields(),
                     )
 
                     raise

@@ -8,6 +8,8 @@ from datetime import (
 
 from typing import Any
 
+from uuid import uuid4
+
 from sqlalchemy import (
     select,
     text,
@@ -141,6 +143,7 @@ class IdempotencyRepository:
     ) -> IdempotencyRequest:
 
         record = IdempotencyRequest(
+            id=str(uuid4()),
             tenant_id=tenant_id,
             operation=operation,
             idempotency_key=(

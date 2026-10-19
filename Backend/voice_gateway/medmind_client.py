@@ -1,18 +1,44 @@
 ﻿from __future__ import annotations
 
+import hashlib
 import logging
 import os
 from typing import Any
 
 import httpx
 
+from voice_gateway.log_safety import (
+    exception_fields,
+    install_log_safety,
+)
+
 
 logger = logging.getLogger(
     "medmind.voice_gateway.medmind_client"
 )
+install_log_safety(logger)
 
 
 DEFAULT_REQUEST_TIMEOUT_SECONDS = 8.0
+
+# Header carrying this gateway's trusted-service token (never logged).
+SERVICE_TOKEN_HEADER = "X-MedMind-Service-Token"
+
+
+def session_fingerprint(
+    session_id: str | None,
+) -> str:
+    """
+    Short one-way fingerprint for logs. A server-issued session id is a
+    bearer-like value, so logs carry only this correlation tag.
+    """
+
+    if not session_id:
+        return "-"
+
+    return hashlib.sha256(
+        session_id.encode("utf-8")
+    ).hexdigest()[:12]
 
 
 class MedMindTimeoutError(
@@ -72,7 +98,24 @@ class MedMindClient:
         request_timeout_seconds: float = (
             DEFAULT_REQUEST_TIMEOUT_SECONDS
         ),
+        service_token: str | None = None,
     ) -> None:
+        # Trusted-service credential for the backend AI chat API.
+        # Without it the backend rejects every chat request (fail closed).
+        self._service_token = (
+            service_token
+            if service_token is not None
+            else os.getenv(
+                "MEDMIND_SERVICE_TOKEN"
+            )
+        ) or None
+
+        if self._service_token is None:
+            logger.warning(
+                "medmind_service_token_missing "
+                "env=MEDMIND_SERVICE_TOKEN"
+            )
+
         self._base_url = (
             base_url
             or os.getenv(
@@ -128,9 +171,9 @@ class MedMindClient:
         try:
             response = await self._client.post(
                 "/api/v1/ai/warmup",
-                headers={
-                    "X-Tenant-ID": tenant_id,
-                },
+                headers=self._headers(
+                    tenant_id
+                ),
                 timeout=min(
                     2.0,
                     self._request_timeout_seconds,
@@ -165,11 +208,13 @@ class MedMindClient:
 
         except httpx.RequestError:
 
-            logger.exception(
+            logger.error(
                 "medmind_warmup_request_error "
                 "tenant_id=%s "
-                "action=continue_call",
+                "action=continue_call "
+                "%s",
                 tenant_id,
+                exception_fields(),
             )
 
             return False
@@ -209,9 +254,9 @@ class MedMindClient:
 
             response = await self._client.post(
                 "/api/v1/ai/chat",
-                headers={
-                    "X-Tenant-ID": tenant_id,
-                },
+                headers=self._headers(
+                    tenant_id
+                ),
                 json={
                     "session_id": session_id,
                     "message": message,
@@ -223,11 +268,11 @@ class MedMindClient:
 
             logger.error(
                 "medmind_voice_timeout "
-                "session_id=%s "
+                "session_fp=%s "
                 "timeout_seconds=%.2f "
                 "sensitive=%s "
                 "action=no_retry",
-                session_id,
+                session_fingerprint(session_id),
                 self._request_timeout_seconds,
                 sensitive,
             )
@@ -244,11 +289,11 @@ class MedMindClient:
 
             logger.error(
                 "medmind_voice_http_error "
-                "session_id=%s "
+                "session_fp=%s "
                 "status_code=%d "
                 "sensitive=%s "
                 "action=no_retry",
-                session_id,
+                session_fingerprint(session_id),
                 exc.response.status_code,
                 sensitive,
             )
@@ -271,9 +316,9 @@ class MedMindClient:
 
             logger.error(
                 "medmind_voice_invalid_response "
-                "session_id=%s "
+                "session_fp=%s "
                 "reason=invalid_json",
-                session_id,
+                session_fingerprint(session_id),
             )
 
             raise MedMindResponseError(
@@ -288,9 +333,9 @@ class MedMindClient:
 
             logger.error(
                 "medmind_voice_invalid_response "
-                "session_id=%s "
+                "session_fp=%s "
                 "reason=not_object",
-                session_id,
+                session_fingerprint(session_id),
             )
 
             raise MedMindResponseError(
@@ -309,9 +354,9 @@ class MedMindClient:
         ):
             logger.error(
                 "medmind_voice_invalid_response "
-                "session_id=%s "
+                "session_fp=%s "
                 "reason=invalid_reply",
-                session_id,
+                session_fingerprint(session_id),
             )
 
             raise MedMindResponseError(
@@ -370,7 +415,7 @@ class MedMindClient:
 
         logger.info(
             "medmind_voice_response "
-            "session_id=%s "
+            "session_fp=%s "
             "message_chars=%d "
             "sensitive=%s "
             "stage=%s "
@@ -378,7 +423,7 @@ class MedMindClient:
             "nlu_source=%s "
             "confidence=%s "
             "fallback_used=%s",
-            session_id,
+            session_fingerprint(session_id),
             len(
                 message
             ),
@@ -391,6 +436,127 @@ class MedMindClient:
         )
 
         return data
+
+    def _headers(
+        self,
+        tenant_id: str,
+    ) -> dict[str, str]:
+        headers = {
+            "X-Tenant-ID": tenant_id,
+        }
+
+        if self._service_token:
+            headers[
+                SERVICE_TOKEN_HEADER
+            ] = self._service_token
+
+        return headers
+
+    async def start_session(
+        self,
+        *,
+        tenant_id: str,
+    ) -> str:
+        """
+        Ask the backend for a new, server-issued voice chat session.
+
+        The returned id is unpredictable and bound to this gateway,
+        tenant and the voice channel. It replaces the old
+        `voice-{channel_id}` id, which callers could guess.
+        """
+
+        try:
+            response = await self._client.post(
+                "/api/v1/ai/sessions",
+                headers=self._headers(
+                    tenant_id
+                ),
+                json={
+                    "channel": "voice",
+                },
+            )
+
+        except httpx.TimeoutException as exc:
+            raise MedMindTimeoutError(
+                "MedMind session creation timed out"
+            ) from exc
+
+        try:
+            response.raise_for_status()
+
+        except httpx.HTTPStatusError as exc:
+            logger.warning(
+                "medmind_session_create_failed "
+                "status_code=%d",
+                exc.response.status_code,
+            )
+
+            raise MedMindHTTPError(
+                status_code=(
+                    exc.response.status_code
+                )
+            ) from exc
+
+        try:
+            data = response.json()
+
+        except ValueError as exc:
+            raise MedMindResponseError(
+                "MedMind session response is not JSON"
+            ) from exc
+
+        session_id = (
+            data.get("session_id")
+            if isinstance(data, dict)
+            else None
+        )
+
+        if (
+            not isinstance(session_id, str)
+            or not session_id.strip()
+        ):
+            raise MedMindResponseError(
+                "MedMind session response has no session_id"
+            )
+
+        return session_id
+
+    async def end_session(
+        self,
+        *,
+        tenant_id: str,
+        session_id: str,
+    ) -> None:
+        """
+        Best-effort close at call end so the backend forgets the
+        conversation (and any patient identity) immediately.
+        Never raises: the call is already over.
+        """
+
+        try:
+            # POST with the id in the body: it never appears in a URL,
+            # so HTTP client and server access logs cannot record it.
+            response = await self._client.post(
+                "/api/v1/ai/sessions/close",
+                headers=self._headers(
+                    tenant_id
+                ),
+                json={
+                    "session_id": session_id,
+                },
+            )
+
+            if response.status_code not in (204, 404):
+                logger.warning(
+                    "medmind_session_close_failed "
+                    "status_code=%d",
+                    response.status_code,
+                )
+
+        except Exception:
+            logger.warning(
+                "medmind_session_close_error"
+            )
 
     async def close(
         self,

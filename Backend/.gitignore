@@ -69,3 +69,7 @@ checkpoints/
 !Diagnostic Agent/models/
 !Diagnostic Agent/models/**
 
+# The backend ORM package lives in app/models (must be committed)
+!app/models/
+!app/models/**
+

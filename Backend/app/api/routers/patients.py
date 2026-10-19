@@ -90,6 +90,9 @@ def update_patient_profile(
         patient_id=
             patient_id,
 
+        national_id=
+            data.national_id,
+
         patient_name=
             data.patient_name,
 

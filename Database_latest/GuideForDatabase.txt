@@ -1,0 +1,19 @@
+
+============================================================
+ ORDER OF OPERATIONS ON THE DATABASE
+============================================================
+
+Use a restored COPY of MedMind_Full.bak first. Back it up before changing it.
+ 1. Database_Sprint/00_baseline_check.sql        (read-only; alembic_version must be a5e30b966d98)
+ 2. EITHER  Database_Sprint/01_ehr_schema.sql   OR  run:  alembic upgrade head   (from Backend/)
+    Both create the same objects and are safe to run together (idempotent).
+ 3. Database_Sprint/02_seed_providers.sql  - dry run first, then set @commit = 1
+ 4. Database_Sprint/03_seed_staff_patients_ehr.sql - dry run first, then set @commit = 1
+ 5. Database_Sprint/04_integrity_and_tenant_checks.sql  (expect no FAIL rows)
+ 6. Database_Sprint/05_backup_restore_validation.sql    (edit @backup_dir first)
+ 7. Database_Sprint/06_erd_export.sql                    (ERD text)
+ 8. optional:  alembic check   (reports any drift)
+
+Staff demo logins (password MedMind#Demo2026), e.g. admin@clinic-001.medmind-demo.com,
+reception@hospital-002.medmind-demo.com. Doctors: <firstname.lastname>@<tenant>.medmind-demo.com
+01b_rollback_ehr_schema.sql undoes step 2 if ever needed.

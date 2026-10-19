@@ -14,9 +14,61 @@ from typing import Any, Callable
 import websockets
 from websockets.protocol import State
 
+from voice_gateway.log_safety import (
+    describe_message,
+    exception_fields,
+    install_log_safety,
+    safe_code,
+)
+
 logger = logging.getLogger(
     "medmind.voice_gateway.hamsa"
 )
+install_log_safety(logger)
+
+# websockets logs the handshake request line ("> GET /...?api_key=...")
+# at DEBUG. The Hamsa key travels in that query string, so the client
+# logger is capped at WARNING regardless of the application log level.
+logging.getLogger(
+    "websockets.client"
+).setLevel(
+    logging.WARNING
+)
+
+
+def _exception_mentions(
+    exc: BaseException,
+    secret: str,
+) -> bool:
+    """True if ``secret`` appears anywhere a traceback printer could show it:
+    the message or notes of ``exc``, its cause/context chain, or the members
+    of an exception group."""
+
+    if not secret:
+        return False
+
+    seen: set[int] = set()
+    pending: list[BaseException] = [exc]
+
+    while pending:
+        current = pending.pop()
+        if id(current) in seen:
+            continue
+        seen.add(id(current))
+        try:
+            texts = [str(current), *map(str, getattr(current, "__notes__", None) or ())]
+            if any(secret in text for text in texts):
+                return True
+            if isinstance(current, BaseExceptionGroup):
+                pending.extend(current.exceptions)
+            for linked in (current.__cause__, current.__context__):
+                if linked is not None:
+                    pending.append(linked)
+        except Exception:
+            # An exception that cannot be inspected is treated as unsafe.
+            return True
+
+    return False
 
 
 HAMSA_WS_URL = (
@@ -203,8 +255,9 @@ class HamsaSTT:
                 except Exception:
 
                     logger.debug(
-                        "hamsa_old_connection_close_failed",
-                        exc_info=True,
+                        "hamsa_old_connection_close_failed "
+                        "%s",
+                        exception_fields(),
                     )
 
             # ====================================================
@@ -253,13 +306,14 @@ class HamsaSTT:
                     except Exception:
 
                         logger.debug(
-                            "hamsa_cancelled_connect_close_failed",
-                            exc_info=True,
+                            "hamsa_cancelled_connect_close_failed "
+                            "%s",
+                            exception_fields(),
                         )
 
                 raise
 
-            except Exception:
+            except Exception as exc:
 
                 if websocket is not None:
 
@@ -270,9 +324,19 @@ class HamsaSTT:
                     except Exception:
 
                         logger.debug(
-                            "hamsa_failed_connect_close_failed",
-                            exc_info=True,
+                            "hamsa_failed_connect_close_failed "
+                            "%s",
+                            exception_fields(),
                         )
+
+                # The URI carries api_key, and some websockets errors
+                # (e.g. InvalidURI) quote it. Never let that text reach
+                # a traceback, in this module's logs or anywhere else.
+                if _exception_mentions(exc, self._api_key):
+                    raise RuntimeError(
+                        "Hamsa connection failed "
+                        f"({type(exc).__name__}; details withheld)"
+                    ) from None
 
                 raise
 
@@ -315,8 +379,10 @@ class HamsaSTT:
 
         except Exception:
 
-            logger.exception(
-                "hamsa_connection_close_failed"
+            logger.error(
+                "hamsa_connection_close_failed "
+                "%s",
+                exception_fields()
             )
 
         logger.info(
@@ -370,9 +436,10 @@ class HamsaSTT:
 
                 logger.debug(
                     "hamsa_connection_reset_close_failed "
-                    "reason=%s",
+                    "reason=%s "
+                    "%s",
                     reason,
-                    exc_info=True,
+                    exception_fields(),
                 )    
     # ========================================================
     # Raw PCM -> WAV
@@ -612,12 +679,25 @@ class HamsaSTT:
             source,
         )
 
+        # STT_BENCHMARK_LOG_TRANSCRIPTS no longer logs transcript text
+        # (it could contain names, national IDs or phone numbers, on any
+        # stage). It now adds word-count metadata only.
         if self._benchmark_log_transcripts:
 
             logger.info(
-                "hamsa_benchmark_final_text "
-                "transcript=%r",
-                transcript,
+                "hamsa_benchmark_final "
+                "sensitive=%s "
+                "characters=%d "
+                "words=%d "
+                "source=%s",
+                sensitive,
+                len(
+                    transcript
+                ),
+                len(
+                    transcript.split()
+                ),
+                source,
             )
 
     # ========================================================
@@ -939,10 +1019,12 @@ class HamsaSTT:
                         dict,
                     ):
 
+                        # Shape only: provider messages may carry caller speech.
                         logger.debug(
-                            "hamsa_message "
-                            "message=%s",
-                            message,
+                            "hamsa_message %s",
+                            describe_message(
+                                message
+                            ),
                         )
 
                         continue
@@ -971,10 +1053,18 @@ class HamsaSTT:
                         == "error"
                     ):
 
+                        # Never the provider error text: shape and code only.
                         logger.error(
-                            "hamsa_error "
-                            "message=%s",
-                            message,
+                            "hamsa_error %s "
+                            "error_code=%s",
+                            describe_message(
+                                message
+                            ),
+                            safe_code(
+                                message.get("code")
+                                if message.get("code") is not None
+                                else message.get("status")
+                            ),
                         )
 
                         return ""
@@ -1023,10 +1113,12 @@ class HamsaSTT:
                     # Other Hamsa JSON/control message
                     # =================================================
 
+                    # Shape only: provider messages may carry caller speech.
                     logger.debug(
-                        "hamsa_message "
-                        "message=%s",
-                        message,
+                        "hamsa_message %s",
+                        describe_message(
+                            message
+                        ),
                     )
 
             except asyncio.CancelledError:
@@ -1047,27 +1139,30 @@ class HamsaSTT:
                 except Exception:
 
                     logger.debug(
-                        "hamsa_cancel_reset_failed",
-                        exc_info=True,
+                        "hamsa_cancel_reset_failed "
+                        "%s",
+                        exception_fields(),
                     )
 
                 raise
 
             except Exception:
 
-                logger.exception(
+                logger.error(
                     "hamsa_persistent_request_failed "
                     "audio_bytes=%d "
                     "sample_rate=%d "
                     "eos_enabled=%s "
                     "sensitive=%s "
-                    "action=reset_connection",
+                    "action=reset_connection "
+                    "%s",
                     len(
                         pcm_audio
                     ),
                     self._sample_rate,
                     eos_enabled,
                     sensitive,
+                    exception_fields(),
                 )
 
                 # ====================================================
@@ -1092,8 +1187,9 @@ class HamsaSTT:
                     except Exception:
 
                         logger.debug(
-                            "hamsa_failed_socket_close_error",
-                            exc_info=True,
+                            "hamsa_failed_socket_close_error "
+                            "%s",
+                            exception_fields(),
                         )
 
                 return ""

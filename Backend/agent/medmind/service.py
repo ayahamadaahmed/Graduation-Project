@@ -1004,7 +1004,12 @@ class MedMindService:
 
             booking_workflow = (
                 BookingWorkflow(
-                    tools=tool_executor
+                    tools=tool_executor,
+                    provider_type=(
+                        tenant_context.provider_type
+                        if tenant_context is not None
+                        else None
+                    ),
                 )
             )
 

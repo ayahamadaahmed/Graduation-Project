@@ -1,5 +1,6 @@
 from fastapi import (
     APIRouter,
+    Depends,
     Header,
     Query,
     status,
@@ -10,7 +11,13 @@ from uuid import UUID
 from app.api.dependencies import (
     AppointmentServiceDependency,
     CurrentProvider,
-   
+    StaffAuditServiceDependency,
+)
+from app.security.rbac import (
+    require_staff_roles,
+)
+from app.security.staff_context import (
+    StaffContext,
 )
 
 from app.schemas.appointment import (
@@ -43,6 +50,19 @@ router = APIRouter(
     prefix="/appointments",
     tags=["appointments"],
 )
+
+# Staff-only reads. Doctor / lab scope is enforced in AppointmentService.
+StaffAppointmentReader = Annotated[
+    StaffContext,
+    Depends(
+        require_staff_roles(
+            "provider_admin",
+            "receptionist",
+            "doctor",
+            "lab_staff",
+        )
+    ),
+]
 
 @router.post(
     "",
@@ -109,15 +129,29 @@ def reschedule_appointment(
 )
 def get_appointment_by_reference(
     appointment_reference: str,
-    provider: CurrentProvider,
+    staff: StaffAppointmentReader,
     service: AppointmentServiceDependency,
+    audit: StaffAuditServiceDependency,
 ) -> AppointmentDetails:
-    return service.get_booking_by_reference(
-        provider_id=provider.id,
+    details = service.get_booking_by_reference_for_staff(
+        staff=staff,
         appointment_reference=(
             appointment_reference
         ),
     )
+
+    audit.record(
+        provider_id=staff.provider_id,
+        user_id=staff.user_id,
+        membership_id=staff.membership_id,
+        patient_id=details.patient_id,
+        action="appointment.read",
+        resource_type="appointment",
+        resource_id=str(details.id),
+        outcome="success",
+    )
+
+    return details
 
 
 @router.get(
@@ -126,8 +160,9 @@ def get_appointment_by_reference(
 )
 def get_patient_appointments(
     patient_id: UUID,
-    provider: CurrentProvider,
+    staff: StaffAppointmentReader,
     service: AppointmentServiceDependency,
+    audit: StaffAuditServiceDependency,
     include_cancelled: bool = False,
     limit: Annotated[
         int,
@@ -137,12 +172,24 @@ def get_patient_appointments(
         ),
     ] = 50,
 ) -> PatientAppointmentsResponse:
-    return service.list_patient_bookings(
-        provider_id=provider.id,
+    result = service.list_patient_bookings_for_staff(
+        staff=staff,
         patient_id=patient_id,
         include_cancelled=include_cancelled,
         limit=limit,
     )
+
+    audit.record(
+        provider_id=staff.provider_id,
+        user_id=staff.user_id,
+        membership_id=staff.membership_id,
+        patient_id=patient_id,
+        action="appointment.list_for_patient",
+        resource_type="appointment",
+        outcome="success",
+    )
+
+    return result
 
 
 

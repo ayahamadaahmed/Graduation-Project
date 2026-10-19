@@ -18,10 +18,10 @@ def test_single_name_part_is_incomplete() -> None:
         deepgram_transcript="آية محمد",
     )
 
-    assert decision.action == "accept"
-    assert decision.provider == "deepgram"
-    assert decision.transcript == "آية محمد"
-    assert decision.reason == "deepgram_only_valid"    
+    assert decision.action == "retry"
+    assert decision.provider is None
+    assert decision.transcript is None
+    assert decision.reason == "deepgram_only_valid_requires_retry"
 
 def test_equivalent_arabic_spellings_agree() -> None:
     assert names_equivalent(
@@ -58,9 +58,10 @@ def test_deepgram_only_valid_candidate() -> None:
         deepgram_transcript="آية محمد",
     )
 
-    assert decision.action == "accept"
-    assert decision.provider == "deepgram"
-    assert decision.transcript == "آية محمد"
+    assert decision.action == "retry"
+    assert decision.provider is None
+    assert decision.transcript is None
+    assert decision.reason == "deepgram_only_valid_requires_retry"
 
 def test_truncated_hamsa_uses_valid_deepgram_name() -> None:
     decision = arbitrate_name_transcripts(
@@ -68,10 +69,10 @@ def test_truncated_hamsa_uses_valid_deepgram_name() -> None:
         deepgram_transcript="آية محمد",
     )
 
-    assert decision.action == "accept"
-    assert decision.provider == "deepgram"
-    assert decision.transcript == "آية محمد"
-    assert decision.reason == "deepgram_only_valid"
+    assert decision.action == "retry"
+    assert decision.provider is None
+    assert decision.transcript is None
+    assert decision.reason == "deepgram_only_valid_requires_retry"
 
 
 def test_different_names_retry() -> None:
@@ -101,9 +102,10 @@ def test_name_stage_runtime_uses_deepgram_when_hamsa_is_truncated() -> None:
     )
 
     assert decision is not None
-    assert decision.action == "accept"
-    assert decision.provider == "deepgram"
-    assert decision.transcript == "آية محمد"
+    assert decision.action == "retry"
+    assert decision.provider is None
+    assert decision.transcript is None
+    assert decision.reason == "deepgram_only_valid_requires_retry"
 
 
 def test_name_stage_runtime_blocks_real_provider_disagreement() -> None:

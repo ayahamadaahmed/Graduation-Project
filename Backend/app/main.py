@@ -5,6 +5,7 @@ from dotenv import (
 )
 from app.api.routers import (
     staff_patients,
+    staff_ehr,
 )
 from langchain_openai import (
     ChatOpenAI,
@@ -685,5 +686,9 @@ app.include_router(
 
 app.include_router(
     staff_patients.router,
+    prefix="/api/v1",
+)
+app.include_router(
+    staff_ehr.router,
     prefix="/api/v1",
 )

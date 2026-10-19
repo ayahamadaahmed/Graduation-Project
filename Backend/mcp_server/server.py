@@ -490,6 +490,11 @@ async def list_available_slots(
 ):
     """
     List available appointment slots.
+
+    Diagnostic labs book without a doctor: omit doctor_id; their
+    slots have doctor_id null. Each slot carries branch_id and
+    branch names, so same-time slots at different branches can be
+    told apart.
     """
 
     tenant_id = (
@@ -711,6 +716,8 @@ async def update_patient_profile(
 
     patient_id: str,
 
+    national_id: str,
+
     channel: Literal[
         "web",
         "mobile",
@@ -752,6 +759,9 @@ async def update_patient_profile(
 
             patient_id=
                 patient_id,
+
+            national_id=
+                national_id,
 
             patient_name=
                 patient_name,

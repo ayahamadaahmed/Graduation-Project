@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from uuid import UUID
 
+from app.core.patient_identity import (
+    PatientIdentityProtector,
+)
 from app.repositories.ehr_encounter_repository import (
     EHREncounterRepository,
 )
@@ -35,6 +39,18 @@ class DiagnosticEncounterRequiresPatientError(
     pass
 
 
+class DiagnosticNationalIdRequiredError(
+    DiagnosticAttachmentBindingError
+):
+    """Binding a patient requires the patient's national ID."""
+
+
+class DiagnosticInvalidNationalIdError(
+    DiagnosticAttachmentBindingError
+):
+    """The supplied national ID is malformed."""
+
+
 class DiagnosticEncounterNotFoundError(
     DiagnosticAttachmentBindingError
 ):
@@ -59,6 +75,9 @@ class DiagnosticAttachmentBindingService:
             PatientRepository,
         encounter_repository:
             EHREncounterRepository,
+        identity_protector_factory: (
+            Callable[[], PatientIdentityProtector] | None
+        ) = None,
     ) -> None:
 
         self.patient_repository = (
@@ -69,12 +88,18 @@ class DiagnosticAttachmentBindingService:
             encounter_repository
         )
 
+        # Built lazily: unbound uploads must work even without identity keys.
+        self.identity_protector_factory = (
+            identity_protector_factory
+        )
+
     def resolve(
         self,
         *,
         provider_id: UUID,
         patient_id: UUID | None = None,
         encounter_id: UUID | None = None,
+        national_id: str | None = None,
     ) -> DiagnosticAttachmentBinding:
 
         # --------------------------------------------------
@@ -105,6 +130,18 @@ class DiagnosticAttachmentBindingService:
                     "encounter_id is provided."
                 )
             )
+
+        # --------------------------------------------------
+        # Identity: binding a patient needs proof that the
+        # caller knows that patient's national ID. A mismatch
+        # answers exactly like an unknown patient. The value
+        # is only hashed here; it is never stored or logged.
+        # --------------------------------------------------
+
+        self._verify_identity(
+            patient_id=patient_id,
+            national_id=national_id,
+        )
 
         # --------------------------------------------------
         # Patient must exist and be active globally.
@@ -180,3 +217,47 @@ class DiagnosticAttachmentBindingService:
             patient_id=patient_id,
             encounter_id=encounter_id,
         )
+
+    def _verify_identity(
+        self,
+        *,
+        patient_id: UUID,
+        national_id: str | None,
+    ) -> None:
+        if national_id is None or not national_id.strip():
+            raise DiagnosticNationalIdRequiredError(
+                "national_id is required when "
+                "patient_id is provided."
+            )
+
+        if self.identity_protector_factory is None:
+            raise RuntimeError(
+                "Patient identity verification "
+                "is not configured."
+            )
+
+        try:
+            national_id_hash = (
+                self.identity_protector_factory()
+                .hash_national_id(national_id)
+            )
+        except ValueError as exc:
+            raise DiagnosticInvalidNationalIdError(
+                "National ID must contain exactly 14 digits."
+            ) from exc
+
+        identified = (
+            self.patient_repository
+            .get_active_by_national_id_hash(
+                national_id_hash
+            )
+        )
+
+        if (
+            identified is None
+            or identified.id != patient_id
+        ):
+            raise DiagnosticPatientNotFoundError(
+                "The patient was not found "
+                "or is inactive."
+            )
