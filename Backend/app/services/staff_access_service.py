@@ -17,6 +17,7 @@ from app.repositories.auth_repository import (
     AuthRepository,
 )
 from app.security.passwords import (
+    burn_password_check,
     hash_password,
     verify_password,
 )
@@ -364,6 +365,10 @@ class StaffAccessService:
             user is None
             or not user.is_active
         ):
+            burn_password_check(
+                password
+            )
+
             raise HTTPException(
                 status_code=(
                     status.HTTP_401_UNAUTHORIZED

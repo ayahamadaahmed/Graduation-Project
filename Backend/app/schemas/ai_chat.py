@@ -119,3 +119,28 @@ class AIChatResponse(BaseModel):
     )
 
     nlg_fallback_reason: str | None = None
+
+class AIChatSessionCreateRequest(BaseModel):
+    channel: Literal[
+        "web",
+        "mobile",
+        "voice",
+        "whatsapp",
+    ]
+
+
+class AIChatSessionCloseRequest(BaseModel):
+    # Sent in the body (not the URL) so access logs never record it.
+    session_id: str = Field(
+        min_length=1,
+        max_length=128,
+    )
+
+
+class AIChatSessionResponse(BaseModel):
+    # Server-issued and unpredictable; the only valid session_id for /ai/chat.
+    session_id: str
+
+    channel: str
+
+    idle_timeout_seconds: int

@@ -132,7 +132,7 @@ class AppointmentRead(BaseModel):
     preferred_language: str | None = None
 
     slot_id: UUID
-    doctor_id: UUID
+    doctor_id: UUID | None = None
     branch_id: UUID
     branch_medical_record_number: str | None = None
     doctor_name: str | None = None
@@ -180,6 +180,31 @@ class AppointmentCancelRequest(BaseModel):
         default=None,
         max_length=100,
     )
+
+class AppointmentConfirmRequest(BaseModel):
+    national_id: str = Field(
+        min_length=14,
+        max_length=14,
+    )
+
+    changed_by: Literal[
+        "patient",
+        "ai_agent",
+        "staff",
+        "system",
+    ] = "ai_agent"
+
+    actor_reference: str | None = Field(
+        default=None,
+        max_length=100,
+    )
+
+class AppointmentConfirmResponse(BaseModel):
+    appointment_reference: str
+    previous_status: str
+    status: str
+
+    confirmed_at: datetime | None
 
 class AppointmentCancelResponse(BaseModel):
     appointment_reference: str
@@ -244,7 +269,7 @@ class AppointmentLookupResponse(BaseModel):
     # Trusted internal IDs
     # --------------------------------------------------------
 
-    doctor_id: UUID
+    doctor_id: UUID | None = None
     branch_id: UUID
 
     service_id: (
@@ -326,7 +351,7 @@ class AppointmentRescheduleResponse(BaseModel):
     old_slot_id: UUID
     new_slot_id: UUID
 
-    doctor_id: UUID
+    doctor_id: UUID | None = None
     branch_id: UUID
     service_id: UUID | None
 

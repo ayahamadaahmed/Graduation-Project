@@ -2,11 +2,13 @@
 from uuid import UUID
 import logging
 import time
-from sqlalchemy import Select, select
+from sqlalchemy import Select, and_, or_, select
 from sqlalchemy.orm import Session
 
 from app.models import (
     Branch,
+    Department,
+    DepartmentSpecialty,
     Doctor,
     DoctorAvailabilitySlot,
     DoctorBranch,
@@ -16,10 +18,18 @@ from app.models import (
     
 )
 from app.models.doctor import DoctorService
+from app.repositories.doctor_eligibility import bookable_doctor_conditions
 
 
 logger = logging.getLogger(
     "uvicorn.error"
+)
+
+# Provider types shown in public discovery (pharmacies are not).
+PUBLIC_PROVIDER_ORG_TYPES = (
+    "clinic",
+    "hospital",
+    "diagnostic_lab",
 )
 
 class CatalogRepository:
@@ -112,14 +122,23 @@ class CatalogRepository:
     def list_public_providers(
         self,
         *,
-        org_type: str,
+        org_type: str | None,
     ) -> list[Provider]:
+
+        # No org_type: every publicly visible type.
+        type_filter = (
+            Provider.org_type.in_(
+                PUBLIC_PROVIDER_ORG_TYPES
+            )
+            if org_type is None
+            else Provider.org_type
+            == org_type
+        )
 
         statement = (
             select(Provider)
             .where(
-                Provider.org_type
-                == org_type,
+                type_filter,
 
                 Provider.verification_status
                 == "verified",
@@ -150,10 +169,7 @@ class CatalogRepository:
                 == provider_id,
 
                 Provider.org_type.in_(
-                    (
-                        "clinic",
-                        "hospital",
-                    )
+                    PUBLIC_PROVIDER_ORG_TYPES
                 ),
 
                 Provider.verification_status
@@ -175,6 +191,108 @@ class CatalogRepository:
                 Branch.is_active== 1,
             )
             .order_by(Branch.name_en)
+        )
+        return list(self.session.scalars(statement).all())
+
+    def list_departments(
+        self,
+        provider_id: UUID,
+        branch_id: UUID | None = None,
+    ) -> list[Department]:
+        """Active departments of one provider; with a branch, that branch's
+        departments plus the provider-wide ones (branch_id NULL)."""
+        statement = select(Department).where(
+            Department.provider_id == provider_id,
+            Department.is_active == 1,
+        )
+        if branch_id is not None:
+            statement = statement.where(
+                or_(
+                    Department.branch_id.is_(None),
+                    Department.branch_id == branch_id,
+                )
+            )
+        statement = statement.order_by(Department.name_en)
+        return list(self.session.scalars(statement).all())
+
+    def get_department(
+        self,
+        provider_id: UUID,
+        department_id: UUID,
+    ) -> Department | None:
+        """Active department of this provider only (other tenants' ids return None)."""
+        statement = select(Department).where(
+            Department.id == department_id,
+            Department.provider_id == provider_id,
+            Department.is_active == 1,
+        )
+        return self.session.scalars(statement).first()
+
+    def get_specialty(
+        self,
+        provider_id: UUID,
+        specialty_id: UUID,
+    ) -> Specialty | None:
+        """Active specialty of this provider only (other tenants' ids return None)."""
+        statement = select(Specialty).where(
+            Specialty.id == specialty_id,
+            Specialty.provider_id == provider_id,
+            Specialty.is_active == 1,
+        )
+        return self.session.scalars(statement).first()
+
+    def department_specialty_exists(
+        self,
+        provider_id: UUID,
+        department_id: UUID,
+        specialty_id: UUID,
+    ) -> bool:
+        statement = select(DepartmentSpecialty.id).where(
+            DepartmentSpecialty.provider_id == provider_id,
+            DepartmentSpecialty.department_id == department_id,
+            DepartmentSpecialty.specialty_id == specialty_id,
+        )
+        return self.session.scalars(statement).first() is not None
+
+    def add_department_specialty(
+        self,
+        provider_id: UUID,
+        department_id: UUID,
+        specialty_id: UUID,
+    ) -> None:
+        self.session.add(
+            DepartmentSpecialty(
+                provider_id=provider_id,
+                department_id=department_id,
+                specialty_id=specialty_id,
+            )
+        )
+        self.session.commit()
+
+    def rollback(self) -> None:
+        self.session.rollback()
+
+    def list_department_specialties(
+        self,
+        provider_id: UUID,
+        department_id: UUID,
+    ) -> list[Specialty]:
+        """Active specialties linked to one department, both scoped to the provider."""
+        statement = (
+            select(Specialty)
+            .join(
+                DepartmentSpecialty,
+                and_(
+                    DepartmentSpecialty.specialty_id == Specialty.id,
+                    DepartmentSpecialty.provider_id == Specialty.provider_id,
+                ),
+            )
+            .where(
+                DepartmentSpecialty.provider_id == provider_id,
+                DepartmentSpecialty.department_id == department_id,
+                Specialty.is_active == 1,
+            )
+            .order_by(Specialty.name_en)
         )
         return list(self.session.scalars(statement).all())
 
@@ -373,8 +491,9 @@ class CatalogRepository:
                     == provider_id,
                     Doctor.specialty_id
                     == specialty_id,
-                    Doctor.is_active
-                    == 1,
+                    # A bookable doctor (doctor_eligibility); with
+                    # DISTINCT, one eligible doctor keeps the service.
+                    *bookable_doctor_conditions(),
                 )
             )
 
@@ -428,7 +547,7 @@ class CatalogRepository:
             )
             .where(
                 Doctor.provider_id == provider_id,
-                Doctor.is_active == 1,
+                *bookable_doctor_conditions(),
             )
         )
 
@@ -483,6 +602,20 @@ class CatalogRepository:
             dict(row)
             for row in rows
         ]
+    def doctor_is_active(
+        self,
+        *,
+        provider_id: UUID,
+        doctor_id: UUID,
+    ) -> bool:
+        # A bookable doctor of this provider (doctor_eligibility).
+        statement = select(Doctor.id).where(
+            Doctor.id == doctor_id,
+            Doctor.provider_id == provider_id,
+            *bookable_doctor_conditions(),
+        )
+        return self.session.scalar(statement) is not None
+
     def list_available_slots(
         self,
         provider_id: UUID,
@@ -494,7 +627,8 @@ class CatalogRepository:
 
         statement = (
             select(DoctorAvailabilitySlot)
-            .join(
+            # Outer join: lab slots are branch-level (doctor_id IS NULL).
+            .outerjoin(
                 Doctor,
                 Doctor.id == DoctorAvailabilitySlot.doctor_id,
             )
@@ -502,18 +636,30 @@ class CatalogRepository:
                 Branch,
                 Branch.id == DoctorAvailabilitySlot.branch_id,
             )
+            .join(
+                Provider,
+                Provider.id == DoctorAvailabilitySlot.provider_id,
+            )
             .where(
                 # Slot must belong to the current tenant/provider.
                 DoctorAvailabilitySlot.provider_id == provider_id,
 
                 # Never expose slots that belong to catalog records
                 # from another provider.
-                Doctor.provider_id == provider_id,
-                Branch.provider_id == provider_id,
-
                 # Historical doctors/branches may remain in the DB,
                 # but their slots must not be publicly bookable.
-                Doctor.is_active == 1,
+                # Doctor-less slots are bookable only at labs.
+                or_(
+                    and_(
+                        DoctorAvailabilitySlot.doctor_id.is_(None),
+                        Provider.org_type == "diagnostic_lab",
+                    ),
+                    and_(
+                        Doctor.provider_id == provider_id,
+                        *bookable_doctor_conditions(),
+                    ),
+                ),
+                Branch.provider_id == provider_id,
                 Branch.is_active == 1,
 
                 DoctorAvailabilitySlot.slot_date == slot_date,

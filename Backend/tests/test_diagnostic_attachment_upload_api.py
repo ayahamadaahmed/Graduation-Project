@@ -5,6 +5,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.security.service_auth import (
+    ServiceContext,
+    require_trusted_service,
+)
 
 from app.api.dependencies import (
     get_current_provider,
@@ -30,9 +34,26 @@ def clear_dependency_overrides():
 
     app.dependency_overrides.clear()
 
+    old_sessions = getattr(app.state, "ai_chat_session_registry", None)
+
     yield
 
     app.dependency_overrides.clear()
+
+    if old_sessions is None:
+        if hasattr(app.state, "ai_chat_session_registry"):
+            delattr(app.state, "ai_chat_session_registry")
+    else:
+        app.state.ai_chat_session_registry = old_sessions
+
+
+class OwnedSessionRegistry:
+    """These tests are about binding: "session-1" is a live session owned by
+    the test gateway. Real ownership checks are in
+    tests/test_diagnostic_attachment_session_ownership.py."""
+
+    def resolve(self, *, session_id, provider_id, service_name, channel):
+        return object() if session_id == "session-1" else None
 
 
 # ============================================================
@@ -100,6 +121,7 @@ class FakeBindingService:
         *,
         provider_id,
         patient_id=None,
+        national_id=None,
         encounter_id=None,
     ):
 
@@ -150,6 +172,16 @@ def make_client(
     app.dependency_overrides[
         get_current_provider
     ] = lambda: provider
+
+    # Uploads require a trusted gateway allowed for this tenant + an owned session.
+    app.dependency_overrides[
+        require_trusted_service
+    ] = lambda: ServiceContext(
+        name="test_gateway",
+        allowed_tenants=frozenset({"clinic-001"}),
+    )
+
+    app.state.ai_chat_session_registry = OwnedSessionRegistry()
 
     app.dependency_overrides[
         get_diagnostic_attachment_service

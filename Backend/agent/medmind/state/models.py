@@ -107,9 +107,14 @@ class SlotSnapshot(
 ):
     id: str
 
-    doctor_id: str
+    # None for branch-level lab slots.
+    doctor_id: str | None = None
 
     branch_id: str
+
+    branch_name_ar: str | None = None
+
+    branch_name_en: str | None = None
 
     slot_date: str
 
@@ -448,6 +453,18 @@ class SessionState(
     # --------------------------------------------------------
     # Reset operation
     # --------------------------------------------------------
+
+    def forget_identity_proof(
+        self,
+    ) -> None:
+        """Drop the national ID kept from an earlier operation.
+
+        Cancelling or rescheduling must be authorised by a national ID the
+        caller gives during that operation, never by one remembered from
+        a previous booking, cancellation or reschedule.
+        """
+
+        self.national_id = None
 
     def reset_operation(
     self,

@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 import bcrypt
 
 
@@ -81,3 +83,23 @@ def verify_password(
         TypeError,
     ):
         return False
+
+
+@lru_cache(maxsize=1)
+def _dummy_password_hash() -> str:
+    return hash_password(
+        "medmind-timing-equalizer-not-a-password"
+    )
+
+
+def burn_password_check(
+    password: str,
+) -> None:
+    """Spend the same bcrypt time as a real check when there is no
+    account to check against, so response time does not reveal
+    whether an email exists."""
+
+    verify_password(
+        password,
+        _dummy_password_hash(),
+    )

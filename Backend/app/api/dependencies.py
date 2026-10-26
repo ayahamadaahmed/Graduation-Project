@@ -20,6 +20,12 @@ from app.repositories.staff_audit_repository import (
 from app.services.staff_audit_service import (
     StaffAuditService,
 )
+from app.repositories.ehr_record_repository import (
+    EHRRecordRepository,
+)
+from app.services.ehr_record_service import (
+    EHRRecordService,
+)
 
 from fastapi.security import (
     HTTPAuthorizationCredentials,
@@ -65,6 +71,12 @@ from app.services.diagnostic_attachment_service import (
 from app.db.session import get_db_session
 from app.models import Provider
 from app.repositories.catalog_repository import CatalogRepository
+from app.repositories.admin_catalog_repository import (
+    AdminCatalogRepository,
+)
+from app.repositories.search_repository import SearchRepository
+from app.repositories.ops_repository import OpsRepository
+from app.services.admin_catalog_service import AdminCatalogService
 from app.services.catalog_service import CatalogService
 from app.repositories.working_hours_repository import (
     WorkingHoursRepository,
@@ -162,6 +174,45 @@ def get_catalog_service(
 CatalogServiceDependency = Annotated[
     CatalogService,
     Depends(get_catalog_service),
+]
+
+
+def get_search_repository(
+    session: DatabaseSession,
+) -> SearchRepository:
+    return SearchRepository(session)
+
+
+SearchRepositoryDependency = Annotated[
+    SearchRepository,
+    Depends(get_search_repository),
+]
+
+
+def get_ops_repository(
+    session: DatabaseSession,
+) -> OpsRepository:
+    return OpsRepository(session)
+
+
+OpsRepositoryDependency = Annotated[
+    OpsRepository,
+    Depends(get_ops_repository),
+]
+
+
+def get_admin_catalog_service(
+    session: DatabaseSession,
+) -> AdminCatalogService:
+    return AdminCatalogService(
+        AdminCatalogRepository(session),
+        idempotency_service=idempotency_service,
+    )
+
+
+AdminCatalogServiceDependency = Annotated[
+    AdminCatalogService,
+    Depends(get_admin_catalog_service),
 ]
 
 
@@ -436,6 +487,10 @@ def get_diagnostic_attachment_binding_service(
         encounter_repository=(
             encounter_repository
         ),
+        # Resolved only when a patient is being bound.
+        identity_protector_factory=(
+            get_patient_identity_protector
+        ),
     )
 
 
@@ -613,4 +668,18 @@ def get_staff_audit_service(
 StaffAuditServiceDependency = Annotated[
     StaffAuditService,
     Depends(get_staff_audit_service),
+]
+
+
+def get_ehr_record_service(
+    session: DatabaseSession,
+) -> EHRRecordService:
+    return EHRRecordService(
+        EHRRecordRepository(session)
+    )
+
+
+EHRRecordServiceDependency = Annotated[
+    EHRRecordService,
+    Depends(get_ehr_record_service),
 ]

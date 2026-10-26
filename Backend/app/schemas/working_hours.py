@@ -5,7 +5,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class WorkingHourCreate(BaseModel):
-    doctor_id: UUID
+    # Omit only for diagnostic labs: branch-level opening hours.
+    doctor_id: UUID | None = None
     branch_id: UUID
 
     # 0 = Monday, 6 = Sunday
@@ -38,7 +39,7 @@ class WorkingHourOut(BaseModel):
 
     id: UUID
     provider_id: UUID
-    doctor_id: UUID
+    doctor_id: UUID | None = None
     branch_id: UUID
 
     day_of_week: int

@@ -48,6 +48,12 @@ async def main() -> None:
                 "url": mcp_url,
 
                 "headers": {
+                    # Agent -> MCP credential (MCP_AUTH_MODE).
+                    **(
+                        {"X-MedMind-Service-Token": os.environ["MCP_SERVER_TOKEN"]}
+                        if os.getenv("MCP_SERVER_TOKEN")
+                        else {}
+                    ),
                     "X-Tenant-ID":
                         tenant_id,
                 },

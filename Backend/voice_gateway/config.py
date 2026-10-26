@@ -1,5 +1,7 @@
 ﻿from __future__ import annotations
 
+import os
+from collections.abc import Mapping
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -14,16 +16,45 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ENV_FILE = PROJECT_ROOT / ".env"
 
 
-def load_environment() -> None:
+def staging_selected(
+    environ: Mapping[str, str] | None = None,
+) -> bool:
+    """
+    APP_ENV=staging in the PROCESS environment (trimmed,
+    case-insensitive). Same rule as the backend
+    (app/core/config.py staging_selected); duplicated because
+    the Voice Gateway runs in its own environment without the
+    app package. Never decided from a .env file.
+    """
+
+    env = os.environ if environ is None else environ
+
+    return (
+        env.get("APP_ENV")
+        or ""
+    ).strip().lower() == "staging"
+
+
+def load_environment(
+    dotenv_path: Path | None = None,
+) -> bool:
     """
     Load local .env values without overriding variables already
     supplied by Docker, Azure, CI/CD, or the host environment.
 
     Production environment variables always take precedence.
+
+    In staging (APP_ENV=staging in the process environment) no
+    .env is loaded at all, so every value must come from the
+    process environment. This runs when voice_gateway.main and
+    voice_gateway.providers.hamsa_tts are imported.
     """
 
-    load_dotenv(
-        dotenv_path=ENV_FILE,
+    if staging_selected():
+        return False
+
+    return load_dotenv(
+        dotenv_path=dotenv_path or ENV_FILE,
         override=False,
     )
 

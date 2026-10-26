@@ -1,0 +1,6 @@
+# The SQL scripts are pinned by SHA-256 in Invoke-ScratchGate.ps1, and the
+# runner's own SHA-256 is recorded in README.md. Their exact bytes (LF line
+# endings) must never be converted on commit or checkout (for example by
+# core.autocrlf=true on Windows), or every pin breaks and the runner refuses.
+*.sql -text
+*.ps1 -text

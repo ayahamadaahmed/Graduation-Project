@@ -1,8 +1,20 @@
 from datetime import date, time
 from decimal import Decimal
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
+
+# The service types the database accepts (CK_services_service_type in
+# app/models/service.py; same values as AdminServiceCreate.service_type).
+ServiceType = Literal[
+    "consultation",
+    "follow_up",
+    "teleconsultation",
+    "procedure",
+    "surgery",
+    "diagnostic",
+]
 
 
 class ORMResponse(BaseModel):
@@ -41,6 +53,23 @@ class BranchOut(ORMResponse):
     whatsapp: str | None
     timezone: str
     is_active: bool
+
+
+class DepartmentOut(ORMResponse):
+    id: UUID
+    provider_id: UUID
+    branch_id: UUID | None
+    code: str
+    name_ar: str
+    name_en: str
+    description_ar: str | None
+    description_en: str | None
+    phone: str | None
+    is_active: bool
+
+
+class DepartmentSpecialtyLinkIn(BaseModel):
+    specialty_id: UUID
 
 
 class SpecialtyOut(ORMResponse):
@@ -98,9 +127,23 @@ class DoctorOut(ORMResponse):
 class SlotOut(ORMResponse):
     id: UUID
     provider_id: UUID
-    doctor_id: UUID
+    # None = branch-level lab slot (no doctor).
+    doctor_id: UUID | None = None
     branch_id: UUID
+    # Lets callers tell same-time slots at different branches apart.
+    branch_name_ar: str | None = None
+    branch_name_en: str | None = None
     slot_date: date
     start_time: time
     end_time: time
     status: str
+
+    @classmethod
+    def from_slot(cls, slot, branch=None) -> "SlotOut":
+        item = cls.model_validate(slot)
+
+        if branch is not None:
+            item.branch_name_ar = branch.name_ar
+            item.branch_name_en = branch.name_en
+
+        return item

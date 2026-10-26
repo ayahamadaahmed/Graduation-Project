@@ -11,10 +11,17 @@ from deepgram import AsyncDeepgramClient
 from deepgram.core.events import EventType
 from websockets.exceptions import ConnectionClosed
 
+from voice_gateway.log_safety import (
+    describe_error,
+    exception_fields,
+    install_log_safety,
+)
+
 
 logger = logging.getLogger(
     "medmind.voice_gateway.deepgram"
 )
+install_log_safety(logger)
 
 DEFAULT_KEYTERMS = [
     # =====================================================
@@ -636,8 +643,10 @@ class DeepgramStreamingSTT:
 
             except Exception:
 
-                logger.exception(
-                    "deepgram_close_stream_error"
+                logger.error(
+                    "deepgram_close_stream_error "
+                    "%s",
+                    exception_fields()
                 )
 
         if context is not None:
@@ -656,8 +665,10 @@ class DeepgramStreamingSTT:
 
             except Exception:
 
-                logger.exception(
-                    "deepgram_context_close_error"
+                logger.error(
+                    "deepgram_context_close_error "
+                    "%s",
+                    exception_fields()
                 )
 
         if (
@@ -1094,12 +1105,24 @@ class DeepgramStreamingSTT:
             ),
         )
 
+        # STT_BENCHMARK_LOG_TRANSCRIPTS no longer logs transcript text
+        # (it could contain names, national IDs or phone numbers, and
+        # this class does not know the conversation stage). It now adds
+        # word-count metadata only.
         if self._benchmark_log_transcripts:
 
             logger.info(
-                "deepgram_benchmark_final_text "
-                "transcript=%r",
-                transcript,
+                "deepgram_benchmark_final "
+                "reason=%s "
+                "characters=%d "
+                "words=%d",
+                reason,
+                len(
+                    transcript
+                ),
+                len(
+                    transcript.split()
+                ),
             )
 
         if (
@@ -1179,10 +1202,13 @@ class DeepgramStreamingSTT:
         error: Any,
     ) -> None:
 
+        # Never the error text: it is provider-controlled.
         logger.error(
             "deepgram_connection_error "
-            "error=%s",
-            error,
+            "%s",
+            describe_error(
+                error
+            ),
         )
 
     # ========================================================

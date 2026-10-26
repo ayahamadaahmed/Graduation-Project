@@ -10,8 +10,10 @@ from medmind.diagnostic_attachment import (
 
 from fastapi import (
     APIRouter,
+    Depends,
     Header,
     HTTPException,
+    Query,
     Request,
     status,
 )
@@ -34,10 +36,24 @@ from medmind.tenancy.factory import (
 from app.schemas.ai_chat import (
     AIChatRequest,
     AIChatResponse,
+    AIChatSessionCloseRequest,
+    AIChatSessionCreateRequest,
+    AIChatSessionResponse,
 )
 
 from app.services.medmind_registry import (
     MedMindServiceRegistry,
+)
+from app.core.config import (
+    get_settings,
+)
+from app.security.service_auth import (
+    AuthorizedService,
+    require_gateway_service,
+)
+from app.services.ai_chat_session_registry import (
+    AIChatSessionRegistry,
+    get_session_registry,
 )
 from app.schemas.radiology_persistence import (
     RadiologyPersistenceRequest,
@@ -111,6 +127,29 @@ def _validate_tenant_id(
     return value
 
 
+def _get_session_registry(
+    request: Request,
+) -> AIChatSessionRegistry:
+    return get_session_registry(
+        request.app.state,
+        idle_timeout_seconds=(
+            get_settings().ai_chat_session_idle_minutes
+            * 60
+        ),
+    )
+
+
+def _session_not_found() -> HTTPException:
+    # Same answer for unknown, expired and foreign sessions.
+    return HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail={
+            "code": "CHAT_SESSION_NOT_FOUND",
+            "message": "The chat session was not found or has expired.",
+        },
+    )
+
+
 def _get_registry(
     request: Request,
 ) -> MedMindServiceRegistry:
@@ -134,13 +173,35 @@ def _get_registry(
     return registry
 
 
+def _require_debug_routes_enabled() -> None:
+    # Hidden (404) outside development. APP_ENV defaults to "development",
+    # so the route ALSO requires the trusted-service token below.
+    if (
+        get_settings().app_env.strip().lower()
+        != "development"
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Not Found",
+        )
+
+
 @router.get(
     "/debug/router",
     include_in_schema=False,
+    dependencies=[
+        Depends(_require_debug_routes_enabled),
+        # Gateways only, like the other /ai/* routes.
+        Depends(require_gateway_service),
+    ],
 )
 async def debug_semantic_router(
     request: Request,
-    message: str = "عايز أحجز كشف جلدية",
+    message: str = Query(
+        default="عايز أحجز كشف جلدية",
+        min_length=1,
+        max_length=500,
+    ),
 ):
 
     semantic_router = getattr(
@@ -219,11 +280,13 @@ async def debug_semantic_router(
 
 @router.post(
     "/warmup",
+    dependencies=[Depends(require_gateway_service)],  # token + gateway identity checked before any tenant DB lookup
     include_in_schema=False,
 )
 async def warmup(
     request: Request,
     provider: CurrentProvider,
+    caller: AuthorizedService,
     x_tenant_id: str = Header(
         ...,
         alias="X-Tenant-ID",
@@ -342,28 +405,6 @@ async def warmup(
             },
         )
 
-    except Exception:
-
-        logger.exception(
-            "medmind_warmup_failed "
-            "tenant_id=%s",
-            tenant_id,
-        )
-
-        raise HTTPException(
-            status_code=503,
-            detail={
-                "code":
-                    "MEDMIND_WARMUP_FAILED",
-
-                "message":
-                    (
-                        "MedMind warm-up "
-                        "could not be completed."
-                    ),
-            },
-        )
-
     elapsed_ms = (
         time.perf_counter()
         - started
@@ -395,12 +436,103 @@ async def warmup(
 # ========================================================
 
 @router.post(
+    "/sessions",
+    dependencies=[Depends(require_gateway_service)],  # token + gateway identity checked before any tenant DB lookup
+    response_model=AIChatSessionResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_chat_session(
+    data: AIChatSessionCreateRequest,
+    request: Request,
+    provider: CurrentProvider,
+    caller: AuthorizedService,
+) -> AIChatSessionResponse:
+    sessions = _get_session_registry(request)
+
+    session = sessions.create(
+        provider_id=provider.id,
+        service_name=caller.name,
+        channel=data.channel,
+    )
+
+    logger.info(
+        "ai_chat_session_created "
+        "tenant_id=%s "
+        "service=%s "
+        "channel=%s",
+        provider.tenant_key,
+        caller.name,
+        data.channel,
+    )
+
+    return AIChatSessionResponse(
+        session_id=session.session_id,
+        channel=session.channel,
+        idle_timeout_seconds=int(
+            sessions.idle_timeout_seconds
+        ),
+    )
+
+
+@router.post(
+    "/voice/session",
+    dependencies=[Depends(require_gateway_service)],  # token + gateway identity checked before any tenant DB lookup
+    response_model=AIChatSessionResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_voice_session(
+    request: Request,
+    provider: CurrentProvider,
+    caller: AuthorizedService,
+) -> AIChatSessionResponse:
+    # API Blueprint path: POST /ai/sessions with the channel fixed to
+    # "voice". It takes no body, so the channel cannot be changed.
+    return await create_chat_session(
+        data=AIChatSessionCreateRequest(
+            channel="voice",
+        ),
+        request=request,
+        provider=provider,
+        caller=caller,
+    )
+
+
+@router.post(
+    "/sessions/close",
+    dependencies=[Depends(require_gateway_service)],  # token + gateway identity checked before any tenant DB lookup
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def close_chat_session(
+    data: AIChatSessionCloseRequest,
+    request: Request,
+    provider: CurrentProvider,
+    caller: AuthorizedService,
+) -> None:
+    closed = _get_session_registry(request).close(
+        session_id=data.session_id,
+        provider_id=provider.id,
+        service_name=caller.name,
+    )
+
+    if not closed:
+        raise _session_not_found()
+
+    # Forget the conversation, including any patient identity it held.
+    await _get_registry(request).clear_session_state(
+        tenant_id=provider.tenant_key,
+        session_id=data.session_id,
+    )
+
+
+@router.post(
     "/chat",
+    dependencies=[Depends(require_gateway_service)],  # token + gateway identity checked before any tenant DB lookup
     response_model=AIChatResponse,
     status_code=status.HTTP_200_OK,
 )
 @router.post(
     "/chat-v2",
+    dependencies=[Depends(require_gateway_service)],  # token + gateway identity checked before any tenant DB lookup
     response_model=AIChatResponse,
     status_code=status.HTTP_200_OK,
     include_in_schema=False,
@@ -410,6 +542,7 @@ async def chat(
     payload: AIChatRequest,
     request: Request,
     provider: CurrentProvider,
+    caller: AuthorizedService,
 
     attachment_service:
         DiagnosticAttachmentServiceDependency,
@@ -489,6 +622,25 @@ async def chat(
                     ),
             },
         )
+
+    # ========================================================
+    # Session ownership
+    #
+    # Only a live, server-issued session created by this same
+    # trusted service, for this provider and channel, is usable.
+    # Checked before any attachment or conversation state.
+    # ========================================================
+
+    if (
+        _get_session_registry(request).resolve(
+            session_id=payload.session_id,
+            provider_id=provider.id,
+            service_name=caller.name,
+            channel=payload.channel,
+        )
+        is None
+    ):
+        raise _session_not_found()
 
     registry = (
         _get_registry(

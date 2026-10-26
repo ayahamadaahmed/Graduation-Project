@@ -6,6 +6,7 @@ import httpx
 
 from fastapi import (
     APIRouter,
+    Depends,
     HTTPException,
     status,
 )
@@ -13,6 +14,10 @@ from fastapi import (
 from app.api.dependencies import (
     AppointmentServiceDependency,
     CurrentProvider,
+)
+from app.security.service_auth import (
+    AuthorizedService,
+    require_gateway_service,
 )
 
 from app.integrations.n8n_whatsapp_client import (
@@ -46,6 +51,7 @@ router = APIRouter(
 
 @router.post(
     "/booking-confirmation",
+    dependencies=[Depends(require_gateway_service)],  # token + gateway identity checked before any tenant DB lookup
     response_model=
         PostCallBookingConfirmationResponse,
 )
@@ -55,6 +61,11 @@ async def booking_confirmation_post_call(
 
     provider:
         CurrentProvider,
+
+    # Only a trusted gateway allowed for this tenant may trigger patient
+    # notifications (checked before any booking lookup or WhatsApp call).
+    caller:
+        AuthorizedService,
 
     appointment_service:
         AppointmentServiceDependency,

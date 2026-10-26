@@ -3,19 +3,9 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.core.config import get_settings
 from app.db.session import engine
 
 router = APIRouter(prefix="/health", tags=["health"])
-settings = get_settings()
-
-
-@router.get("/live")
-def liveness() -> dict[str, str]:
-    return {
-        "status": "ok",
-        "service": settings.app_name,
-    }
 
 
 @router.get("", response_model=None)
@@ -33,8 +23,9 @@ def readiness():
             },
         )
 
+    # Public and unauthenticated: report reachability only, never the
+    # database name or other infrastructure details.
     return {
         "status": "ok",
         "database": "connected",
-        "database_name": settings.db_name,
     }

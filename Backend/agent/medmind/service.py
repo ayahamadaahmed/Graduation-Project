@@ -26,6 +26,18 @@ from medmind.core.read_routing import (
     resolve_read_route,
 )
 from medmind.tenancy.context import TenantContext
+from medmind.env_precedence import (
+    dotenv_disabled_for_staging,
+    keep_process_auth_settings,
+)
+from medmind.mcp_config import (  # noqa: F401  re-exported
+    DEFAULT_MCP_URL,
+    MCP_AUTH_MODES,
+    MCP_SERVICE_TOKEN_HEADER,
+    _mcp_auth_mode,
+    _mcp_request_headers,
+    _mcp_url,
+)
 import logging
 import os
 import time
@@ -558,9 +570,18 @@ class MedMindService:
             time.perf_counter()
         )
 
-        load_dotenv(
-            override=True
-        )
+        # .env may update other settings, but never
+        # replaces a shell-provided auth-chain value
+        # (medmind/env_precedence.py). With
+        # APP_ENV=staging in the process environment
+        # no .env is loaded at all.
+        if not dotenv_disabled_for_staging():
+
+            with keep_process_auth_settings():
+
+                load_dotenv(
+                    override=True
+                )
 
         dotenv_ms = (
             time.perf_counter()
@@ -586,10 +607,7 @@ class MedMindService:
             "gpt-4.1",
         )
 
-        mcp_url = os.getenv(
-            "MCP_URL",
-            "http://127.0.0.1:9000/mcp",
-        )
+        mcp_url = _mcp_url()
 
         resolved_tenant_id = (
             tenant_id
@@ -597,6 +615,12 @@ class MedMindService:
             os.getenv(
                 "TENANT_ID",
                 "clinic-001",
+            )
+        )
+
+        mcp_headers = (
+            _mcp_request_headers(
+                resolved_tenant_id
             )
         )
 
@@ -634,10 +658,8 @@ class MedMindService:
                         "url":
                             mcp_url,
 
-                        "headers": {
-                            "X-Tenant-ID":
-                                resolved_tenant_id,
-                        },
+                        "headers":
+                            mcp_headers,
 
                         "httpx_client_factory":
                             _create_instrumented_mcp_http_client,
@@ -1004,7 +1026,12 @@ class MedMindService:
 
             booking_workflow = (
                 BookingWorkflow(
-                    tools=tool_executor
+                    tools=tool_executor,
+                    provider_type=(
+                        tenant_context.provider_type
+                        if tenant_context is not None
+                        else None
+                    ),
                 )
             )
 

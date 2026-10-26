@@ -355,9 +355,9 @@ def _save_slots(
         )
 
         if not all(
+            # doctor_id may be None: branch-level lab slot.
             [
                 slot_id,
-                doctor_id,
                 branch_id,
                 slot_date,
                 start_time,
@@ -376,6 +376,12 @@ def _save_slots(
 
                 branch_id=
                     branch_id,
+
+                branch_name_ar=
+                    item.get("branch_name_ar"),
+
+                branch_name_en=
+                    item.get("branch_name_en"),
 
                 slot_date=
                     slot_date,

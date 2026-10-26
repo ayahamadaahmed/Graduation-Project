@@ -6,9 +6,11 @@ from typing import Annotated
 
 from fastapi import (
     APIRouter,
+    Depends,
     File,
     Form,
     HTTPException,
+    Request,
     UploadFile,
     status,
 )
@@ -35,6 +37,23 @@ from app.api.dependencies import (
     PathologyPersistenceAdapterDependency,
     RadiologyPersistenceAdapterDependency,
     DiagnosticAttachmentBindingServiceDependency,
+    StaffAuditServiceDependency,
+)
+from app.security.rbac import (
+    require_staff_roles,
+)
+from app.core.config import (
+    get_settings,
+)
+from app.security.service_auth import (
+    AuthorizedService,
+    require_gateway_service,
+)
+from app.services.ai_chat_session_registry import (
+    get_session_registry,
+)
+from app.security.staff_context import (
+    StaffContext,
 )
 from app.schemas.radiology_persistence import (
     RadiologyPersistenceRequest,
@@ -42,6 +61,8 @@ from app.schemas.radiology_persistence import (
 )
 from app.services.diagnostic_attachment_binding_service import (
     DiagnosticEncounterNotFoundError,
+    DiagnosticInvalidNationalIdError,
+    DiagnosticNationalIdRequiredError,
     DiagnosticEncounterRequiresPatientError,
     DiagnosticPatientNotFoundError,
     DiagnosticPatientProviderMismatchError,
@@ -83,9 +104,37 @@ router = APIRouter(
     tags=["diagnostics"],
 )
 
+# Persisting diagnostic results writes to the patient's record, so it needs a
+# staff session with a report role (the same roles that may read reports).
+DiagnosticResultWriter = Annotated[
+    StaffContext,
+    Depends(require_staff_roles("doctor", "lab_staff")),
+]
+
+
+def _audit_result_write(
+    audit,
+    staff: StaffContext,
+    *,
+    action: str,
+    resource_type: str,
+    report,
+) -> None:
+    audit.record(
+        provider_id=staff.provider_id,
+        user_id=staff.user_id,
+        membership_id=staff.membership_id,
+        patient_id=report.patient_id,
+        action=action,
+        resource_type=resource_type,
+        resource_id=str(report.id),
+        outcome="success",
+    )
+
 
 @router.post(
     "/attachments",
+    dependencies=[Depends(require_gateway_service)],  # token + gateway identity checked before any tenant DB lookup
     response_model=(
         DiagnosticAttachmentUploadResponse
     ),
@@ -108,6 +157,11 @@ async def upload_diagnostic_attachment(
 
     provider: CurrentProvider,
 
+    # Uploads come only from a trusted gateway allowed for this tenant.
+    caller: AuthorizedService,
+
+    request: Request,
+
     service:
         DiagnosticAttachmentServiceDependency,
 
@@ -124,7 +178,49 @@ async def upload_diagnostic_attachment(
         Form(),
     ] = None,
 
+    # Required with patient_id: proves the caller knows that patient.
+    # Only hashed for comparison; never stored, logged or echoed.
+    national_id: Annotated[
+        str | None,
+        Form(),
+    ] = None,
+
 ) -> DiagnosticAttachmentUploadResponse:
+
+    # ========================================================
+    # Session ownership (before any identity lookup or write)
+    #
+    # The session must be live and owned by this gateway and
+    # this provider. Unknown, expired, foreign-service and
+    # foreign-tenant sessions all answer the same 404.
+    # ========================================================
+
+    session_id = session_id.strip()
+
+    owned_session = get_session_registry(
+        request.app.state,
+        idle_timeout_seconds=(
+            get_settings().ai_chat_session_idle_minutes
+            * 60
+        ),
+    ).resolve(
+        session_id=session_id,
+        provider_id=provider.id,
+        service_name=caller.name,
+        channel=None,
+    )
+
+    if owned_session is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "CHAT_SESSION_NOT_FOUND",
+                "message": (
+                    "The chat session was not found "
+                    "or has expired."
+                ),
+            },
+        )
 
     # ========================================================
     # Resolve trusted patient / encounter binding
@@ -136,7 +232,44 @@ async def upload_diagnostic_attachment(
             provider_id=provider.id,
             patient_id=patient_id,
             encounter_id=encounter_id,
+            national_id=national_id,
         )
+
+    except (
+        DiagnosticNationalIdRequiredError
+    ) as exc:
+        raise HTTPException(
+            status_code=(
+                status.HTTP_422_UNPROCESSABLE_ENTITY
+            ),
+            detail={
+                "code":
+                    "NATIONAL_ID_REQUIRED",
+                "message":
+                    (
+                        "national_id is required when "
+                        "patient_id is provided."
+                    ),
+            },
+        ) from exc
+
+    except (
+        DiagnosticInvalidNationalIdError
+    ) as exc:
+        raise HTTPException(
+            status_code=(
+                status.HTTP_422_UNPROCESSABLE_ENTITY
+            ),
+            detail={
+                "code":
+                    "INVALID_NATIONAL_ID",
+                "message":
+                    (
+                        "National ID must contain "
+                        "exactly 14 digits."
+                    ),
+            },
+        ) from exc
 
     except (
         DiagnosticEncounterRequiresPatientError
@@ -386,6 +519,10 @@ def persist_pathology_results(
 
     provider: CurrentProvider,
 
+    staff: DiagnosticResultWriter,
+
+    audit: StaffAuditServiceDependency,
+
     adapter:
         PathologyPersistenceAdapterDependency,
 ) -> PathologyPersistenceResponse:
@@ -493,6 +630,14 @@ def persist_pathology_results(
         ),
     )
 
+    _audit_result_write(
+        audit,
+        staff,
+        action="diagnostics.pathology.persist",
+        resource_type="lab_report",
+        report=report,
+    )
+
     return PathologyPersistenceResponse(
         attachment_id=(
             request.attachment_id
@@ -517,6 +662,10 @@ def persist_radiology_results(
     request: RadiologyPersistenceRequest,
 
     provider: CurrentProvider,
+
+    staff: DiagnosticResultWriter,
+
+    audit: StaffAuditServiceDependency,
 
     adapter:
         RadiologyPersistenceAdapterDependency,
@@ -619,6 +768,14 @@ def persist_radiology_results(
         provider.tenant_key,
         request.attachment_id,
         report.id,
+    )
+
+    _audit_result_write(
+        audit,
+        staff,
+        action="diagnostics.radiology.persist",
+        resource_type="radiology_report",
+        report=report,
     )
 
     return RadiologyPersistenceResponse(

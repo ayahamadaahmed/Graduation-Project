@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from datetime import (
     date,
     datetime,
@@ -14,6 +15,7 @@ from sqlalchemy.exc import IntegrityError
 from app.models import DoctorWorkingHour
 from app.repositories.working_hours_repository import (
     WorkingHoursRepository,
+    slot_owner_key,
 )
 
 from app.schemas.working_hours import (
@@ -70,8 +72,28 @@ class WorkingHoursService:
         self,
         provider_id: UUID,
         data: WorkingHourCreate,
+        audit: Callable[[str | None], None] | None = None,
     ) -> DoctorWorkingHour:
-        if not self.repository.doctor_exists(
+        if data.doctor_id is None:
+            # Branch-level opening hours exist only for labs;
+            # clinics and hospitals always schedule a doctor.
+            if not self.repository.provider_is_lab(
+                provider_id,
+            ):
+                raise HTTPException(
+                    status_code=(
+                        status.HTTP_422_UNPROCESSABLE_ENTITY
+                    ),
+                    detail={
+                        "code": "DOCTOR_REQUIRED",
+                        "message": (
+                            "doctor_id is required for "
+                            "clinic and hospital schedules."
+                        ),
+                    },
+                )
+
+        elif not self.repository.doctor_exists(
             provider_id,
             data.doctor_id,
         ):
@@ -99,10 +121,12 @@ class WorkingHoursService:
                 },
             )
 
-        if not self.repository.doctor_works_at_branch(
-            provider_id,
-            data.doctor_id,
-            data.branch_id,
+        if data.doctor_id is not None and not (
+            self.repository.doctor_works_at_branch(
+                provider_id,
+                data.doctor_id,
+                data.branch_id,
+            )
         ):
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -155,6 +179,11 @@ class WorkingHoursService:
 
         try:
             self.repository.add(working_hour)
+
+            # Saved in the same commit as the working-hours row.
+            if audit is not None:
+                audit(str(working_hour.id))
+
             self.repository.session.commit()
             self.repository.session.refresh(
                 working_hour
@@ -195,6 +224,7 @@ class WorkingHoursService:
     provider_id: UUID,
     provider_timezone: str,
     data: SlotGenerationRequest,
+    audit: Callable[[str | None], None] | None = None,
 ) -> SlotGenerationResult:
         provider_today = datetime.now(
             ZoneInfo(provider_timezone)
@@ -271,9 +301,10 @@ class WorkingHoursService:
 
                     for slot_start, slot_end in intervals:
                         slot_key = (
-                            str(
-                                schedule.doctor_id
-                            ).lower(),
+                            slot_owner_key(
+                                schedule.doctor_id,
+                                schedule.branch_id,
+                            ),
                             current_date,
                             slot_start,
                         )
@@ -302,6 +333,10 @@ class WorkingHoursService:
                         created_slots += 1
 
                 current_date += timedelta(days=1)
+
+            # Saved in the same commit as the generated slots.
+            if audit is not None:
+                audit(None)
 
             self.repository.session.commit()
 

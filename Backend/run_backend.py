@@ -3,9 +3,25 @@ import os
 
 from dotenv import load_dotenv
 
+from app.core.config import staging_selected
 
-# Load .env BEFORE importing uvicorn/app modules.
-load_dotenv()
+
+def load_local_env(dotenv_path=None) -> bool:
+    """Load Backend/.env unless APP_ENV=staging is set in the process environment.
+
+    Outside staging this is the previous behaviour: fill unset variables from
+    .env (no override). Returns whether .env loading was attempted.
+    """
+    if staging_selected():
+        return False
+    load_dotenv(dotenv_path)
+    return True
+
+
+# Load .env BEFORE importing uvicorn/app modules (only when run as a script,
+# so importing this module, e.g. in tests, never reads .env).
+if __name__ == "__main__":
+    load_local_env()
 
 
 import uvicorn

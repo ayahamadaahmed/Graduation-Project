@@ -6,6 +6,21 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 
+def _scope_params(
+    scope_doctor_id: UUID | None,
+    scope_service_type: str | None,
+) -> dict[str, Any]:
+    """Bind values for the optional staff read-scope filters (None = no filter)."""
+    return {
+        "scope_doctor_id": (
+            str(scope_doctor_id)
+            if scope_doctor_id is not None
+            else None
+        ),
+        "scope_service_type": scope_service_type,
+    }
+
+
 class AppointmentRepository:
     def __init__(
         self,
@@ -134,6 +149,42 @@ class AppointmentRepository:
 
         return row is not None
 
+    def doctor_is_verified(
+        self,
+        *,
+        provider_id: UUID,
+        doctor_id: UUID,
+    ) -> bool:
+        # Shared lock held until commit: a rejection's UPDATE of this row
+        # waits for the booking, and a booking waits for an uncommitted
+        # rejection, then sees it. Not UPDLOCK: bookings of the same doctor
+        # must not block each other.
+        statement = text(
+            """
+            SELECT TOP 1
+                doctor.id
+            FROM dbo.doctors AS doctor
+                WITH (
+                    HOLDLOCK,
+                    ROWLOCK
+                )
+            WHERE
+                doctor.id = :doctor_id
+                AND doctor.provider_id = :provider_id
+                AND doctor.verification_status = 'verified';
+            """
+        )
+
+        row = self.session.execute(
+            statement,
+            {
+                "provider_id": str(provider_id),
+                "doctor_id": str(doctor_id),
+            },
+        ).first()
+
+        return row is not None
+
     def doctor_service_is_valid(
         self,
         *,
@@ -176,6 +227,53 @@ class AppointmentRepository:
 
         return row is not None
 
+    def lab_slot_service_is_valid(
+        self,
+        *,
+        provider_id: UUID,
+        branch_id: UUID,
+        service_id: UUID,
+    ) -> bool:
+        """
+        Branch-level lab slot (no doctor): the provider must be a
+        diagnostic lab, the branch active, and the service an active
+        diagnostic test of the same lab.
+        """
+        statement = text(
+            """
+            SELECT TOP 1
+                service.id
+            FROM dbo.services AS service
+
+            INNER JOIN dbo.providers AS provider
+                ON provider.id = service.provider_id
+                AND provider.org_type = 'diagnostic_lab'
+                AND provider.is_active = 1
+
+            INNER JOIN dbo.branches AS branch
+                ON branch.id = :branch_id
+                AND branch.provider_id = :provider_id
+                AND branch.is_active = 1
+
+            WHERE
+                service.id = :service_id
+                AND service.provider_id = :provider_id
+                AND service.service_type = 'diagnostic'
+                AND service.is_active = 1;
+            """
+        )
+
+        row = self.session.execute(
+            statement,
+            {
+                "provider_id": str(provider_id),
+                "branch_id": str(branch_id),
+                "service_id": str(service_id),
+            },
+        ).first()
+
+        return row is not None
+
     def insert_appointment(
         self,
         *,
@@ -186,7 +284,7 @@ class AppointmentRepository:
         patient_name: str,
         phone: str,
         slot_id: UUID,
-        doctor_id: UUID,
+        doctor_id: UUID | None,
         branch_id: UUID,
         service_id: UUID,
         scheduled_date: Any,
@@ -280,7 +378,11 @@ class AppointmentRepository:
                 "patient_name": patient_name,
                 "phone": phone,
                 "slot_id": str(slot_id),
-                "doctor_id": str(doctor_id),
+                "doctor_id": (
+                    str(doctor_id)
+                    if doctor_id is not None
+                    else None
+                ),
                 "branch_id": str(branch_id),
                 "service_id": str(service_id),
                 "scheduled_date": scheduled_date,
@@ -474,7 +576,7 @@ class AppointmentRepository:
             INNER JOIN dbo.patients AS patient
                 ON patient.id = appointment.patient_id
 
-            INNER JOIN dbo.doctors AS doctor
+            LEFT JOIN dbo.doctors AS doctor
                 ON doctor.id = appointment.doctor_id
                 AND doctor.provider_id =
                     appointment.provider_id
@@ -554,7 +656,7 @@ class AppointmentRepository:
             WHERE
                 appointment.provider_id = :provider_id
                 AND appointment.appointment_reference =
-                    :appointment_reference;
+                    CAST(:appointment_reference AS VARCHAR(8000));
             """
         )
 
@@ -754,7 +856,7 @@ class AppointmentRepository:
         appointment_id: UUID,
         old_slot_id: UUID,
         new_slot_id: UUID,
-        doctor_id: UUID,
+        doctor_id: UUID | None,
         branch_id: UUID,
         scheduled_date: Any,
         start_time: Any,
@@ -798,7 +900,11 @@ class AppointmentRepository:
                 ),
                 "old_slot_id": str(old_slot_id),
                 "new_slot_id": str(new_slot_id),
-                "doctor_id": str(doctor_id),
+                "doctor_id": (
+                    str(doctor_id)
+                    if doctor_id is not None
+                    else None
+                ),
                 "branch_id": str(branch_id),
                 "scheduled_date": scheduled_date,
                 "start_time": start_time,
@@ -953,6 +1059,8 @@ class AppointmentRepository:
         *,
         provider_id: UUID,
         appointment_reference: str,
+        scope_doctor_id: UUID | None = None,
+        scope_service_type: str | None = None,
     ) -> dict[str, Any] | None:
         statement = text(
             """
@@ -1046,7 +1154,7 @@ class AppointmentRepository:
             INNER JOIN dbo.patients AS patient
                 ON patient.id = appointment.patient_id
 
-            INNER JOIN dbo.doctors AS doctor
+            LEFT JOIN dbo.doctors AS doctor
                 ON doctor.id = appointment.doctor_id
                 AND doctor.provider_id =
                     appointment.provider_id
@@ -1081,7 +1189,16 @@ class AppointmentRepository:
                     :provider_id
 
                 AND appointment.appointment_reference =
-                    :appointment_reference;
+                    :appointment_reference
+
+                AND (
+                    :scope_doctor_id IS NULL
+                    OR appointment.doctor_id = :scope_doctor_id
+                )
+                AND (
+                    :scope_service_type IS NULL
+                    OR service.service_type = :scope_service_type
+                );
             """
         )
 
@@ -1093,6 +1210,10 @@ class AppointmentRepository:
                 ),
                 "appointment_reference": (
                     appointment_reference
+                ),
+                **_scope_params(
+                    scope_doctor_id,
+                    scope_service_type,
                 ),
             },
         ).mappings().first()
@@ -1109,6 +1230,8 @@ class AppointmentRepository:
         future_only: bool = False,
         cutoff_date: date | None = None,
         cutoff_time: time | None = None,
+        scope_doctor_id: UUID | None = None,
+        scope_service_type: str | None = None,
     ) -> list[dict[str, Any]]:
 
         if future_only and (
@@ -1210,7 +1333,7 @@ class AppointmentRepository:
             INNER JOIN dbo.patients AS patient
                 ON patient.id = appointment.patient_id
 
-            INNER JOIN dbo.doctors AS doctor
+            LEFT JOIN dbo.doctors AS doctor
                 ON doctor.id = appointment.doctor_id
                 AND doctor.provider_id =
                     appointment.provider_id
@@ -1263,6 +1386,14 @@ class AppointmentRepository:
                         AND appointment.start_time >= :cutoff_time
                     )
                 )
+                AND (
+                    :scope_doctor_id IS NULL
+                    OR appointment.doctor_id = :scope_doctor_id
+                )
+                AND (
+                    :scope_service_type IS NULL
+                    OR service.service_type = :scope_service_type
+                )
 
             ORDER BY
                 CASE
@@ -1312,6 +1443,10 @@ class AppointmentRepository:
                 ),
                 "cutoff_date": cutoff_date,
                 "cutoff_time": cutoff_time,
+                **_scope_params(
+                    scope_doctor_id,
+                    scope_service_type,
+                ),
             }
         ).mappings().all()
 
@@ -1319,3 +1454,119 @@ class AppointmentRepository:
             dict(row)
             for row in rows
         ]
+
+    def mark_appointment_confirmed(
+        self,
+        *,
+        provider_id: UUID,
+        appointment_id: UUID,
+    ) -> bool:
+        statement = text(
+            """
+            UPDATE dbo.appointments
+            SET
+                status = 'confirmed',
+                confirmed_at = SYSUTCDATETIME(),
+                updated_at = SYSUTCDATETIME()
+            WHERE
+                id = :appointment_id
+                AND provider_id = :provider_id
+                AND status = 'pending';
+            """
+        )
+
+        result = self.session.execute(
+            statement,
+            {
+                "provider_id": str(provider_id),
+                "appointment_id": str(
+                    appointment_id
+                ),
+            },
+        )
+
+        return result.rowcount == 1
+
+    def insert_confirmation_history(
+        self,
+        *,
+        provider_id: UUID,
+        appointment_id: UUID,
+        slot_id: UUID,
+        changed_by: str,
+        actor_reference: str | None,
+    ) -> None:
+        statement = text(
+            """
+            INSERT INTO dbo.appointment_status_history (
+                provider_id,
+                appointment_id,
+                event_type,
+                previous_status,
+                new_status,
+                old_slot_id,
+                new_slot_id,
+                changed_by,
+                actor_reference,
+                reason,
+                changed_at
+            )
+            VALUES (
+                :provider_id,
+                :appointment_id,
+                'confirmed',
+                'pending',
+                'confirmed',
+                NULL,
+                :slot_id,
+                :changed_by,
+                :actor_reference,
+                NULL,
+                SYSUTCDATETIME()
+            );
+            """
+        )
+
+        self.session.execute(
+            statement,
+            {
+                "provider_id": str(provider_id),
+                "appointment_id": str(
+                    appointment_id
+                ),
+                "slot_id": str(slot_id),
+                "changed_by": changed_by,
+                "actor_reference": actor_reference,
+            },
+        )
+
+    def get_confirmation_result(
+        self,
+        *,
+        provider_id: UUID,
+        appointment_id: UUID,
+    ) -> dict[str, Any] | None:
+        statement = text(
+            """
+            SELECT
+                appointment.appointment_reference,
+                appointment.status,
+                appointment.confirmed_at
+            FROM dbo.appointments AS appointment
+            WHERE
+                appointment.id = :appointment_id
+                AND appointment.provider_id = :provider_id;
+            """
+        )
+
+        row = self.session.execute(
+            statement,
+            {
+                "provider_id": str(provider_id),
+                "appointment_id": str(
+                    appointment_id
+                ),
+            },
+        ).mappings().first()
+
+        return dict(row) if row else None

@@ -12,6 +12,28 @@ from app.services.diagnostic_attachment_binding_service import (
 )
 
 
+TEST_NATIONAL_ID = "29001010100011"  # test-only value
+
+
+class _SameAsRequestedPatient:
+    """These legacy tests are about provider / encounter rules, so identity
+    always matches the requested patient here. Identity itself is tested in
+    tests/test_diagnostic_attachment_identity.py."""
+
+    def __eq__(self, other):
+        return True
+
+    def __ne__(self, other):
+        return False
+
+    __hash__ = object.__hash__
+
+
+class FakeIdentityProtector:
+    def hash_national_id(self, national_id):
+        return "hash:" + national_id
+
+
 class FakePatientRepository:
 
     def __init__(self):
@@ -23,6 +45,14 @@ class FakePatientRepository:
         patient_id,
     ):
         return self.patient
+
+    def get_active_by_national_id_hash(
+        self,
+        national_id_hash,
+    ):
+        if self.patient is None:
+            return None
+        return SimpleNamespace(id=_SameAsRequestedPatient())
 
     def get_provider_profile(
         self,
@@ -78,6 +108,9 @@ def make_service():
             encounter_repository=(
                 encounter_repository
             ),
+            identity_protector_factory=(
+                FakeIdentityProtector
+            ),
         )
     )
 
@@ -97,6 +130,7 @@ def test_unbound_attachment_is_allowed():
     ) = make_service()
 
     result = service.resolve(
+        national_id=TEST_NATIONAL_ID,
         provider_id=uuid4(),
     )
 
@@ -117,6 +151,7 @@ def test_encounter_requires_patient():
     ):
 
         service.resolve(
+            national_id=TEST_NATIONAL_ID,
             provider_id=uuid4(),
             encounter_id=uuid4(),
         )
@@ -137,6 +172,7 @@ def test_patient_must_be_active():
     ):
 
         service.resolve(
+            national_id=TEST_NATIONAL_ID,
             provider_id=uuid4(),
             patient_id=uuid4(),
         )
@@ -163,6 +199,7 @@ def test_patient_must_belong_to_provider():
     ):
 
         service.resolve(
+            national_id=TEST_NATIONAL_ID,
             provider_id=uuid4(),
             patient_id=uuid4(),
         )
@@ -193,6 +230,7 @@ def test_provider_profile_must_be_active():
     ):
 
         service.resolve(
+            national_id=TEST_NATIONAL_ID,
             provider_id=uuid4(),
             patient_id=uuid4(),
         )
@@ -222,6 +260,7 @@ def test_valid_patient_binding():
     )
 
     result = service.resolve(
+        national_id=TEST_NATIONAL_ID,
         provider_id=provider_id,
         patient_id=patient_id,
     )
@@ -261,6 +300,7 @@ def test_encounter_must_match_patient_and_provider():
     ):
 
         service.resolve(
+            national_id=TEST_NATIONAL_ID,
             provider_id=uuid4(),
             patient_id=uuid4(),
             encounter_id=uuid4(),
@@ -298,6 +338,7 @@ def test_valid_patient_and_encounter_binding():
     )
 
     result = service.resolve(
+        national_id=TEST_NATIONAL_ID,
         provider_id=provider_id,
         patient_id=patient_id,
         encounter_id=encounter_id,

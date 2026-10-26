@@ -22,8 +22,20 @@ router = APIRouter(
     tags=["public-catalog"],
 )
 
+# API Blueprint paths (GET /providers, GET /providers/{id}/branches):
+# the same handlers as /public/..., no prefix of their own.
+blueprint_router = APIRouter(
+    tags=["public-catalog"],
+)
+
 
 @router.get(
+    "/providers",
+    response_model=(
+        list[PublicProviderOut]
+    ),
+)
+@blueprint_router.get(
     "/providers",
     response_model=(
         list[PublicProviderOut]
@@ -34,7 +46,15 @@ def list_public_providers(
     org_type: Literal[
         "clinic",
         "hospital",
-    ] = Query(...),
+        "diagnostic_lab",
+    ] | None = Query(
+        default=None,
+        description=(
+            "Optional filter: clinic, hospital or diagnostic_lab. "
+            "Omitted: every publicly visible provider (verified and "
+            "active, any of these types). Any other value is 422."
+        ),
+    ),
 ) -> list[PublicProviderOut]:
 
     providers = (
@@ -51,6 +71,12 @@ def list_public_providers(
 
 
 @router.get(
+    "/providers/{provider_id}/branches",
+    response_model=(
+        list[PublicBranchOut]
+    ),
+)
+@blueprint_router.get(
     "/providers/{provider_id}/branches",
     response_model=(
         list[PublicBranchOut]

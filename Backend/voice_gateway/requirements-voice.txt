@@ -1,0 +1,20 @@
+# Voice Gateway runtime dependencies (isolated venv: Backend/.venv-voice).
+# Every package is imported by voice_gateway/ at module level, except uvicorn,
+# which serves the FastAPI app in voice_gateway/main.py.
+# Pins match requirements-prod.txt wherever the backend uses the same package.
+
+# Voice-only
+audioop-lts==0.2.2
+deepgram-sdk==7.13.0
+silero-vad==6.2.3
+
+# Shared with the backend (same pins)
+fastapi==0.139.2
+httpx==0.28.1
+numpy==2.4.4
+pydantic==2.13.4
+pydantic-settings==2.14.2
+python-dotenv==1.2.2
+torch==2.14.1
+uvicorn==0.51.0
+websockets==15.0.1

@@ -128,8 +128,10 @@ def test_pathology_arabic_preserves_abnormal_values():
     assert "36.0" in reply
     assert "%" in reply
     assert "37.0-50.0" in reply
-    assert "منخفض" in reply
-    assert "مش تعتبر تشخيصًا طبيًا" in reply
+    # The low flag is rendered as "below normal according to the reference",
+    # attached to the value, followed by the non-final-diagnosis disclaimer.
+    assert "HCT = 36.0 %، وده أقل من الطبيعي حسب المرجع" in reply
+    assert "مش تشخيص نهائي" in reply
 
 
 def test_pathology_all_normal_does_not_invent_problem():

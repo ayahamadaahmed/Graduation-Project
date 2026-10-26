@@ -56,6 +56,19 @@ class FakeSession:
 # FAKE PATIENT REPOSITORY
 # ============================================================
 
+# Test-only identity values (not real national IDs).
+VALID_NATIONAL_ID = "29001010100011"
+
+
+class FakeIdentityProtector:
+    """Deterministic stand-in for PatientIdentityProtector."""
+
+    def hash_national_id(self, national_id):
+        if not (isinstance(national_id, str) and national_id.isdigit() and len(national_id) == 14):
+            raise ValueError("National ID must be 14 digits.")
+        return "hash:" + national_id
+
+
 class FakePatientRepository:
 
     def __init__(
@@ -93,6 +106,18 @@ class FakePatientRepository:
             self.patient.id == patient_id
         ):
 
+            return self.patient
+
+        return None
+
+    def get_active_by_national_id_hash(
+        self,
+        national_id_hash,
+    ):
+        if (
+            self.patient is not None
+            and getattr(self.patient, "national_id_hash", None) == national_id_hash
+        ):
             return self.patient
 
         return None
@@ -138,6 +163,9 @@ def make_patient():
 
         is_active=
             1,
+
+        national_id_hash=
+            "hash:" + VALID_NATIONAL_ID,
     )
 
 
@@ -170,6 +198,10 @@ def make_service(
 
     service.repository = (
         repository
+    )
+
+    service.identity_protector = (
+        FakeIdentityProtector()
     )
 
     return service
@@ -215,6 +247,9 @@ def test_update_patient_name_only():
 
     result = (
         service.update_profile(
+            national_id=
+                VALID_NATIONAL_ID,
+
             provider_id=
                 provider_id,
 
@@ -308,6 +343,9 @@ def test_update_patient_phone_only():
 
     result = (
         service.update_profile(
+            national_id=
+                VALID_NATIONAL_ID,
+
             provider_id=
                 provider_id,
 
@@ -401,6 +439,9 @@ def test_update_patient_name_and_phone():
 
     result = (
         service.update_profile(
+            national_id=
+                VALID_NATIONAL_ID,
+
             provider_id=
                 provider_id,
 
@@ -489,6 +530,9 @@ def test_update_patient_rejects_invalid_phone():
     ) as exc_info:
 
         service.update_profile(
+            national_id=
+                VALID_NATIONAL_ID,
+
             provider_id=
                 provider_id,
 
@@ -565,6 +609,9 @@ def test_provider_cannot_update_unrelated_patient():
     ) as exc_info:
 
         service.update_profile(
+            national_id=
+                VALID_NATIONAL_ID,
+
             provider_id=
                 provider_id,
 
@@ -639,6 +686,9 @@ def test_unknown_patient_cannot_be_updated():
     ) as exc_info:
 
         service.update_profile(
+            national_id=
+                VALID_NATIONAL_ID,
+
             provider_id=
                 provider_id,
 

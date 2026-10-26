@@ -8,8 +8,11 @@ from fastapi.testclient import (
 )
 
 from app.main import app
+from app.security.staff_context import StaffContext
 
 from app.api.dependencies import (
+    get_current_staff,
+    get_staff_audit_service,
     get_current_provider,
     get_pathology_persistence_adapter,
 )
@@ -112,6 +115,7 @@ class FakePathologyAdapter:
 
         return SimpleNamespace(
             id=self.report_id,
+            patient_id=None,
             status="processed",
         )
 
@@ -132,6 +136,23 @@ def make_client(
     app.dependency_overrides[
         get_pathology_persistence_adapter
     ] = lambda: adapter
+
+    # Result writes need a staff session with a report role.
+    app.dependency_overrides[
+        get_current_staff
+    ] = lambda: StaffContext(
+        user_id=uuid4(),
+        membership_id=uuid4(),
+        provider_id=provider.id,
+        role="lab_staff",
+        doctor_id=None,
+    )
+
+    app.dependency_overrides[
+        get_staff_audit_service
+    ] = lambda: SimpleNamespace(
+        record=lambda **kwargs: None,
+    )
 
     return (
         TestClient(app),

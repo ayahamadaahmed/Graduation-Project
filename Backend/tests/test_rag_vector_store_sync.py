@@ -39,8 +39,12 @@ class FakeQdrantClient:
         )
 
         points = [
+            # Real Qdrant records carry a payload when
+            # with_payload=True; these old points have no
+            # content_hash, so their chunks are re-upserted.
             SimpleNamespace(
-                id=point_id
+                id=point_id,
+                payload={},
             )
             for point_id
             in self.existing_ids

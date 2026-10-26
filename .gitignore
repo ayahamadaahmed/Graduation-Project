@@ -1,0 +1,23 @@
+# Root-level ignores. Backend/.gitignore keeps its own project-specific rules.
+
+# Python virtual environments and caches
+.venv/
+.venv-*/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local secrets (safe templates stay tracked)
+.env
+.env.*
+!.env.example
+
+# SQLite runtime side files
+*.sqlite-shm
+*.sqlite-wal
+
+# Local database backups (never add new ones)
+*.bak

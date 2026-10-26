@@ -65,6 +65,19 @@ class BackendClient:
             settings.request_timeout
         )
 
+        # MCP -> Backend credential (the mcp_server
+        # entry of MEDMIND_SERVICE_CREDENTIALS).
+        # Sent on every request, never logged.
+        self._service_token: str | None = (
+            settings.backend_service_token
+            .get_secret_value()
+            .strip()
+            or None
+            if settings.backend_service_token
+            is not None
+            else None
+        )
+
         self._client: (
             httpx.AsyncClient
             | None
@@ -261,6 +274,14 @@ class BackendClient:
             "Accept":
                 "application/json",
         }
+
+        if self._service_token:
+
+            headers[
+                "X-MedMind-Service-Token"
+            ] = (
+                self._service_token
+            )
 
         if idempotency_key:
 

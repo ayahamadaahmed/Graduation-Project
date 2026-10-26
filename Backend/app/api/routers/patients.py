@@ -1,9 +1,10 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from uuid import UUID
 from app.api.dependencies import (
     CurrentProvider,
     PatientServiceDependency,
 )
+from app.security.booking_auth import require_booking_service
 from app.schemas.patient import (
     PatientLookupRequest,
     PatientLookupResponse,
@@ -14,9 +15,13 @@ from app.schemas.patient import (
 )
 
 
+# Every route here is called by the MCP server for the AI agent: the booking
+# service credential is checked before the tenant lookup
+# (app/security/booking_auth.py).
 router = APIRouter(
     prefix="/patients",
     tags=["patients"],
+    dependencies=[Depends(require_booking_service)],
 )
 
 
@@ -89,6 +94,9 @@ def update_patient_profile(
 
         patient_id=
             patient_id,
+
+        national_id=
+            data.national_id,
 
         patient_name=
             data.patient_name,

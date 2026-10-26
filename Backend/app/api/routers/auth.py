@@ -1,5 +1,9 @@
+from typing import Annotated
+
 from fastapi import (
     APIRouter,
+    Depends,
+    HTTPException,
     status,
 )
 
@@ -15,6 +19,10 @@ from app.schemas.auth import (
     StaffCurrentResponse,
     StaffLoginRequest,
     StaffLoginResponse,
+)
+from app.security.login_throttle import (
+    LoginThrottle,
+    get_login_throttle,
 )
 from app.security.tokens import (
     create_access_token,
@@ -36,14 +44,64 @@ def login_staff(
     data: StaffLoginRequest,
     provider: CurrentProvider,
     service: StaffAccessServiceDependency,
+    throttle: Annotated[
+        LoginThrottle,
+        Depends(get_login_throttle),
+    ],
 ) -> StaffLoginResponse:
 
-    user, membership = (
-        service.authenticate_staff(
-            provider_id=provider.id,
-            email=data.email,
-            password=data.password,
+    retry_after = throttle.retry_after(
+        data.email
+    )
+
+    if retry_after is not None:
+
+        raise HTTPException(
+            status_code=(
+                status.HTTP_429_TOO_MANY_REQUESTS
+            ),
+            detail={
+                "code":
+                    "LOGIN_TEMPORARILY_LOCKED",
+
+                "message": (
+                    "Too many failed login attempts. "
+                    "Try again later."
+                ),
+            },
+            headers={
+                "Retry-After":
+                    str(retry_after),
+            },
         )
+
+    try:
+
+        user, membership = (
+            service.authenticate_staff(
+                provider_id=provider.id,
+                email=data.email,
+                password=data.password,
+            )
+        )
+
+    except HTTPException as exc:
+
+        # Only wrong email/password counts; a correct password without
+        # access to this provider (403) is not a guessing failure.
+        if (
+            isinstance(exc.detail, dict)
+            and exc.detail.get("code")
+            == "INVALID_CREDENTIALS"
+        ):
+            throttle.register_failure(
+                data.email
+            )
+
+        raise
+
+    throttle.reset(
+        data.email
     )
 
     settings = get_settings()

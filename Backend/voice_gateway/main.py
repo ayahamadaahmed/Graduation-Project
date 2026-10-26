@@ -30,7 +30,14 @@ from voice_gateway.config import (
     get_voice_settings,
     load_environment,
 )
-from voice_gateway.medmind_client import MedMindClient
+from voice_gateway.log_safety import (
+    exception_fields,
+    install_log_safety,
+)
+from voice_gateway.medmind_client import (
+    MedMindClient,
+    session_fingerprint,
+)
 from voice_gateway.providers.deepgram_stt import DeepgramStreamingSTT
 from voice_gateway.providers.elevenlabs_tts import ElevenLabsTTS
 from voice_gateway.providers.hamsa_stt import HamsaSTT
@@ -54,6 +61,13 @@ from voice_gateway.safety.confirmation_guard import (
 from voice_gateway.post_call_client import (
     PostCallClient,
 )
+from voice_gateway.media_auth import (
+    POLICY_VIOLATION_CLOSE_CODE,
+    MediaAuthError,
+    MediaAuthorization,
+    auth_timeout_seconds,
+    authorize_media_start,
+)
 # ============================================================
 # Environment
 # ============================================================
@@ -73,6 +87,16 @@ logging.basicConfig(
 logger = logging.getLogger(
     "medmind.voice_gateway"
 )
+
+# Tracebacks keep types and line numbers but never exception messages.
+install_log_safety(logger)
+
+# uvicorn logs exceptions that escape asterisk_media (it re-raises) through
+# "uvicorn.error" with logger.exception(...). Process-local: this covers the
+# Voice Gateway process only. uvicorn configures logging before importing
+# this module, and a later dictConfig keeps logger filters. Not covered:
+# asyncio's unhandled-task logger, Gunicorn's own loggers, other servers.
+install_log_safety(logging.getLogger("uvicorn.error"))
 
 
 # ============================================================
@@ -371,7 +395,9 @@ def get_turn_end_grace_seconds(
             DIGIT_TURN_END_GRACE_SECONDS
         )
 
-    return 0.0
+    return (
+        DEFAULT_TURN_END_GRACE_SECONDS
+    )
 
 def is_valid_digit_candidate_for_stage(
     *,
@@ -1523,9 +1549,10 @@ async def consume_final_transcripts(
         audio_format,
     )
 
-    session_id = (
-        f"voice-{channel_id}"
-    )
+    # Server-issued, unpredictable MedMind session for this call.
+    # Created on the first transcript (see below) and closed at call end.
+    # The Asterisk channel id is never used as the session id.
+    session_id: str | None = None
 
     try:
 
@@ -1608,30 +1635,31 @@ async def consume_final_transcripts(
                         )
                     )
 
+                    # National ID / phone digits: log the count only.
                     logger.info(
                         "voice_final_transcript_received "
                         "channel_id=%s "
                         "stage=%s "
                         "transcript_chars=%d "
-                        "transcript=%r",
+                        "digit_count=%d",
                         channel_id,
                         current_stage,
                         len(transcript),
-                        transcript,
+                        digit_count,
                     )
 
                 else:
 
+                    # Caller speech may contain names or other
+                    # patient details: never log the text itself.
                     logger.info(
                         "voice_final_transcript_received "
                         "channel_id=%s "
                         "stage=%s "
-                        "transcript_chars=%d "
-                        "transcript=%r",
+                        "transcript_chars=%d",
                         channel_id,
                         current_stage,
                         len(transcript),
-                        transcript,
                     )
 
                 # ====================================================
@@ -1661,6 +1689,15 @@ async def consume_final_transcripts(
 
                     try:
 
+                        if session_id is None:
+                            session_id = (
+                                await medmind.start_session(
+                                    tenant_id=(
+                                        tenant_id
+                                    ),
+                                )
+                            )
+
                         result = (
                             await medmind.chat(
                                 tenant_id=(
@@ -1680,10 +1717,16 @@ async def consume_final_transcripts(
 
                     except Exception:
 
-                        logger.exception(
+                        logger.error(
                             "voice_medmind_request_failed "
-                            "channel_id=%s",
+                            "channel_id=%s "
+                            "%s "
+                            "stage=%s "
+                            "session=%s",
                             channel_id,
+                            exception_fields(),
+                            conversation_state.get("stage", "new"),
+                            session_fingerprint(session_id),
                         )
 
                         continue
@@ -1877,17 +1920,19 @@ async def consume_final_transcripts(
 
                 except Exception as exc:
 
-                    logger.exception(
+                    logger.error(
                         "voice_tts_text_prepare_failed "
                         "channel_id=%s "
                         "language=%s "
-                        "error_type=%s "
-                        "action=fallback_to_raw_reply",
+                        "action=fallback_to_raw_reply "
+                        "%s "
+                        "stage=%s "
+                        "session=%s",
                         channel_id,
                         language,
-                        type(
-                            exc
-                        ).__name__,
+                        exception_fields(),
+                        conversation_state.get("stage", "new"),
+                        session_fingerprint(session_id),
                     )
 
                     tts_text = (
@@ -2255,16 +2300,18 @@ async def consume_final_transcripts(
 
                     except Exception as exc:
 
-                        logger.exception(
+                        logger.error(
                             "voice_tts_stream_failed "
                             "channel_id=%s "
                             "provider=%s "
-                            "error_type=%s",
+                            "%s "
+                            "stage=%s "
+                            "session=%s",
                             channel_id,
                             tts_provider_name,
-                            type(
-                                exc
-                            ).__name__,
+                            exception_fields(),
+                            conversation_state.get("stage", "new"),
+                            session_fingerprint(session_id),
                         )
 
                         # ====================================================
@@ -2315,13 +2362,19 @@ async def consume_final_transcripts(
 
                             except Exception:
 
-                                logger.exception(
+                                logger.error(
                                     "voice_tts_stream_"
                                     "buffer_stop_failed "
                                     "channel_id=%s "
-                                    "provider=%s",
+                                    "provider=%s "
+                                    "%s "
+                                    "stage=%s "
+                                    "session=%s",
                                     channel_id,
                                     tts_provider_name,
+                                    exception_fields(),
+                                    conversation_state.get("stage", "new"),
+                                    session_fingerprint(session_id),
                                 )
 
                         continue
@@ -2388,16 +2441,18 @@ async def consume_final_transcripts(
 
                 except Exception as exc:
 
-                    logger.exception(
+                    logger.error(
                         "voice_tts_failed "
                         "channel_id=%s "
                         "provider=%s "
-                        "error_type=%s",
+                        "%s "
+                        "stage=%s "
+                        "session=%s",
                         channel_id,
                         tts_provider_name,
-                        type(
-                            exc
-                        ).__name__,
+                        exception_fields(),
+                        conversation_state.get("stage", "new"),
+                        session_fingerprint(session_id),
                     )
 
                     continue
@@ -2449,16 +2504,18 @@ async def consume_final_transcripts(
 
                 except Exception as exc:
 
-                    logger.exception(
+                    logger.error(
                         "voice_audio_send_failed "
                         "channel_id=%s "
                         "provider=%s "
-                        "error_type=%s",
+                        "%s "
+                        "stage=%s "
+                        "session=%s",
                         channel_id,
                         tts_provider_name,
-                        type(
-                            exc
-                        ).__name__,
+                        exception_fields(),
+                        conversation_state.get("stage", "new"),
+                        session_fingerprint(session_id),
                     )
 
                     continue
@@ -2561,15 +2618,28 @@ async def consume_final_transcripts(
 
         except Exception:
 
-            logger.exception(
+            logger.error(
                 "medmind_warmup_task_shutdown_error "
-                "channel_id=%s",
+                "channel_id=%s "
+                "%s "
+                "stage=%s "
+                "session=%s",
                 channel_id,
+                exception_fields(),
+                conversation_state.get("stage", "new"),
+                session_fingerprint(session_id),
             )
 
         # ====================================================
         # Close MedMind
         # ====================================================
+
+        if session_id is not None:
+            # Best effort; never raises.
+            await medmind.end_session(
+                tenant_id=tenant_id,
+                session_id=session_id,
+            )
 
         try:
 
@@ -2577,8 +2647,14 @@ async def consume_final_transcripts(
 
         except Exception:
 
-            logger.exception(
-                "medmind_client_shutdown_error"
+            logger.error(
+                "medmind_client_shutdown_error "
+                "%s "
+                "stage=%s "
+                "session=%s",
+                exception_fields(),
+                conversation_state.get("stage", "new"),
+                session_fingerprint(session_id)
             )
 
         # ====================================================
@@ -2603,12 +2679,18 @@ async def consume_final_transcripts(
 
             except Exception:
 
-                logger.exception(
+                logger.error(
                     "voice_tts_warmup_task_shutdown_error "
                     "channel_id=%s "
-                    "provider=%s",
+                    "provider=%s "
+                    "%s "
+                    "stage=%s "
+                    "session=%s",
                     channel_id,
                     tts_provider_name,
+                    exception_fields(),
+                    conversation_state.get("stage", "new"),
+                    session_fingerprint(session_id),
                 )
 
         # ====================================================
@@ -2637,11 +2719,17 @@ async def consume_final_transcripts(
 
             except Exception:
 
-                logger.exception(
+                logger.error(
                     "voice_tts_async_provider_"
                     "shutdown_error "
-                    "provider=%s",
+                    "provider=%s "
+                    "%s "
+                    "stage=%s "
+                    "session=%s",
                     tts_provider_name,
+                    exception_fields(),
+                    conversation_state.get("stage", "new"),
+                    session_fingerprint(session_id),
                 )
 
         # ====================================================
@@ -2670,11 +2758,17 @@ async def consume_final_transcripts(
 
             except Exception:
 
-                logger.exception(
+                logger.error(
                     "voice_tts_provider_"
                     "shutdown_error "
-                    "provider=%s",
+                    "provider=%s "
+                    "%s "
+                    "stage=%s "
+                    "session=%s",
                     tts_provider_name,
+                    exception_fields(),
+                    conversation_state.get("stage", "new"),
+                    session_fingerprint(session_id),
                 )
 
 
@@ -2720,6 +2814,18 @@ async def asterisk_media(
 
     client = (
         websocket.client
+    )
+
+    # Nothing from this connection is trusted until MEDIA_START carries a
+    # valid shared secret and an allowed tenant (voice_gateway/media_auth.py).
+    media_authorization: (
+        MediaAuthorization
+        | None
+    ) = None
+
+    media_auth_deadline = (
+        event_loop.time()
+        + auth_timeout_seconds()
     )
 
     media_send_lock = (
@@ -3160,10 +3266,14 @@ async def asterisk_media(
                 False
             )
 
-            logger.exception(
+            logger.error(
                 "deepgram_shadow_start_failed "
-                "channel_id=%s",
+                "channel_id=%s "
+                "%s "
+                "stage=%s",
                 channel_id,
+                exception_fields(),
+                conversation_state.get("stage", "new"),
             )
 
     # ========================================================
@@ -3257,10 +3367,14 @@ async def asterisk_media(
 
         except Exception:
 
-            logger.exception(
+            logger.error(
                 "deepgram_shadow_finalize_failed "
-                "channel_id=%s",
+                "channel_id=%s "
+                "%s "
+                "stage=%s",
                 channel_id,
+                exception_fields(),
+                conversation_state.get("stage", "new"),
             )
 
     def schedule_deepgram_finalize(
@@ -3413,16 +3527,20 @@ async def asterisk_media(
 
             except Exception:
 
-                logger.exception(
+                logger.error(
                     "hamsa_drain_failed "
                     "channel_id=%s "
-                    "turn=%d",
+                    "turn=%d "
+                    "%s "
+                    "stage=%s",
                     (
                         session.channel_id
                         if session is not None
                         else "unknown"
                     ),
                     turn_number,
+                    exception_fields(),
+                    conversation_state.get("stage", "new"),
                 )
 
                 return
@@ -4623,16 +4741,20 @@ async def asterisk_media(
 
                                                         except Exception:
 
-                                                            logger.exception(
+                                                            logger.error(
                                                                 "hamsa_stale_request_cleanup_failed "
                                                                 "channel_id=%s "
-                                                                "turn=%d",
+                                                                "turn=%d "
+                                                                "%s "
+                                                                "stage=%s",
                                                                 (
                                                                     session.channel_id
                                                                     if session is not None
                                                                     else "unknown"
                                                                 ),
                                                                 turn_number,
+                                                                exception_fields(),
+                                                                conversation_state.get("stage", "new"),
                                                             )
 
                                                     logger.info(
@@ -4728,16 +4850,20 @@ async def asterisk_media(
 
                                             except Exception:
 
-                                                logger.exception(
+                                                logger.error(
                                                     "hamsa_background_cleanup_failed "
                                                     "channel_id=%s "
-                                                    "turn=%d",
+                                                    "turn=%d "
+                                                    "%s "
+                                                    "stage=%s",
                                                     (
                                                         session.channel_id
                                                         if session is not None
                                                         else "unknown"
                                                     ),
                                                     turn,
+                                                    exception_fields(),
+                                                    conversation_state.get("stage", "new"),
                                                 )
 
                                             # --------------------------------------------
@@ -4964,16 +5090,20 @@ async def asterisk_media(
 
                 except Exception:
 
-                    logger.exception(
+                    logger.error(
                         "hamsa_primary_processing_failed "
                         "channel_id=%s "
-                        "turn=%d",
+                        "turn=%d "
+                        "%s "
+                        "stage=%s",
                         (
                             session.channel_id
                             if session is not None
                             else "unknown"
                         ),
                         turn_number,
+                        exception_fields(),
+                        conversation_state.get("stage", "new"),
                     )
 
                     transcript = ""
@@ -6225,18 +6355,18 @@ async def asterisk_media(
 
         except Exception as exc:
 
-            logger.exception(
+            logger.error(
                 "voice_barge_in_failed "
                 "channel_id=%s "
-                "error_type=%s",
+                "%s "
+                "stage=%s",
                 (
                     session.channel_id
                     if session is not None
                     else "unknown"
                 ),
-                type(
-                    exc
-                ).__name__,
+                exception_fields(),
+                conversation_state.get("stage", "new"),
             )
         
     # ========================================================
@@ -6247,9 +6377,31 @@ async def asterisk_media(
 
         while True:
 
-            message = (
-                await websocket.receive()
-            )
+            if media_authorization is None:
+                try:
+                    message = await asyncio.wait_for(
+                        websocket.receive(),
+                        timeout=max(
+                            0.0,
+                            media_auth_deadline
+                            - event_loop.time(),
+                        ),
+                    )
+                except asyncio.TimeoutError:
+                    logger.warning(
+                        "media_auth_rejected "
+                        "reason=auth_timeout "
+                        "client=%s",
+                        client,
+                    )
+                    await websocket.close(
+                        code=POLICY_VIOLATION_CLOSE_CODE
+                    )
+                    break
+            else:
+                message = (
+                    await websocket.receive()
+                )
 
             message_type = (
                 message.get(
@@ -6319,10 +6471,14 @@ async def asterisk_media(
 
                     except Exception:
 
-                        logger.exception(
+                        logger.error(
                             "deepgram_shadow_audio_failed "
-                            "channel_id=%s",
+                            "channel_id=%s "
+                            "%s "
+                            "stage=%s",
                             session.channel_id,
+                            exception_fields(),
+                            conversation_state.get("stage", "new"),
                         )
 
                 # ====================================================
@@ -6935,6 +7091,48 @@ async def asterisk_media(
                 continue
 
             # ====================================================
+            # Non-object control message
+            #
+            # Every Asterisk control event is a JSON object. Any
+            # other JSON value (array, number, string, null) is a
+            # protocol violation: close with 1008 before it is
+            # used, so nothing is created for it.
+            # ====================================================
+
+            if not isinstance(
+                event,
+                dict,
+            ):
+
+                if media_authorization is None:
+
+                    logger.warning(
+                        "media_auth_rejected "
+                        "reason=non_object_control_message "
+                        "client=%s",
+                        client,
+                    )
+
+                else:
+
+                    logger.warning(
+                        "asterisk_control_rejected "
+                        "reason=non_object_control_message "
+                        "channel_id=%s",
+                        (
+                            session.channel_id
+                            if session is not None
+                            else "unknown"
+                        ),
+                    )
+
+                await websocket.close(
+                    code=POLICY_VIOLATION_CLOSE_CODE
+                )
+
+                break
+
+            # ====================================================
             # MEDIA_BUFFERING_COMPLETED
             #
             # If this correlation id belongs to a terminal reply,
@@ -7083,6 +7281,25 @@ async def asterisk_media(
                 )
                 == "MEDIA_START"
             ):
+
+                try:
+                    media_authorization = (
+                        authorize_media_start(
+                            event
+                        )
+                    )
+                except MediaAuthError as exc:
+                    logger.warning(
+                        "media_auth_rejected "
+                        "reason=%s "
+                        "client=%s",
+                        exc.reason,
+                        client,
+                    )
+                    await websocket.close(
+                        code=POLICY_VIOLATION_CLOSE_CODE
+                    )
+                    break
 
                 audio_format = (
                     str(
@@ -7478,46 +7695,17 @@ async def asterisk_media(
                 # Tenant
                 # ====================================================
 
-                env_tenant_id = (
-                    os.getenv(
-                        "VOICE_TENANT_ID",
-                        "",
-                    )
-                    .strip()
+                # Chosen and allow-listed in authorize_media_start():
+                # MEDMIND_TENANT_ID channel variable, else VOICE_TENANT_ID,
+                # and always one of VOICE_ALLOWED_TENANT_IDS. No hard-coded
+                # fallback: an unknown tenant never reaches this point.
+                tenant_id = (
+                    media_authorization.tenant_id
                 )
 
-                if call_tenant_id:
-
-                    tenant_id = (
-                        call_tenant_id
-                    )
-
-                    tenant_source = (
-                        "asterisk"
-                    )
-
-                elif env_tenant_id:
-
-                    tenant_id = (
-                        env_tenant_id
-                    )
-
-                    tenant_source = (
-                        "environment"
-                    )
-
-                else:
-
-                    # Temporary legacy fallback.
-                    # Remove after Asterisk tenant propagation
-                    # is verified end-to-end.
-                    tenant_id = (
-                        "clinic-001"
-                    )
-
-                    tenant_source = (
-                        "legacy_default"
-                    )
+                tenant_source = (
+                    media_authorization.tenant_source
+                )
 
                 logger.info(
                     "voice_tenant_selected "
@@ -7735,21 +7923,18 @@ async def asterisk_media(
 
                     if exception is not None:
 
+                        # Class, code and source location only: the
+                        # message or traceback may quote caller speech.
                         logger.error(
                             "voice_transcript_consumer_crashed "
                             "channel_id=%s "
-                            "error_type=%s "
-                            "error=%s",
+                            "%s "
+                            "stage=%s",
                             session.channel_id,
-                            type(
+                            exception_fields(
                                 exception
-                            ).__name__,
-                            exception,
-                            exc_info=(
-                                type(exception),
-                                exception,
-                                exception.__traceback__,
                             ),
+                            conversation_state.get("stage", "new"),
                         )
 
 
@@ -7855,8 +8040,12 @@ async def asterisk_media(
 
         except Exception:
 
-            logger.exception(
-                "barge_in_guard_shutdown_error"
+            logger.error(
+                "barge_in_guard_shutdown_error "
+                "%s "
+                "stage=%s",
+                exception_fields(),
+                conversation_state.get("stage", "new")
             )
         # ====================================================
         # Stop Digit Retry Timer
@@ -7870,8 +8059,12 @@ async def asterisk_media(
 
         except Exception:
 
-            logger.exception(
-                "digit_retry_timer_shutdown_error"
+            logger.error(
+                "digit_retry_timer_shutdown_error "
+                "%s "
+                "stage=%s",
+                exception_fields(),
+                conversation_state.get("stage", "new")
             )
 
         # ====================================================
@@ -7886,9 +8079,13 @@ async def asterisk_media(
 
         except Exception:
 
-            logger.exception(
+            logger.error(
                 "turn_finalize_grace_"
-                "shutdown_error"
+                "shutdown_error "
+                "%s "
+                "stage=%s",
+                exception_fields(),
+                conversation_state.get("stage", "new")
             )
 
         # ====================================================
@@ -7966,8 +8163,12 @@ async def asterisk_media(
 
             except Exception:
 
-                logger.exception(
-                    "deepgram_fallback_shutdown_error"
+                logger.error(
+                    "deepgram_fallback_shutdown_error "
+                    "%s "
+                    "stage=%s",
+                    exception_fields(),
+                    conversation_state.get("stage", "new")
                 )
 
         # ====================================================
@@ -8038,8 +8239,12 @@ async def asterisk_media(
 
             except Exception:
 
-                logger.exception(
-                    "hamsa_primary_shutdown_error"
+                logger.error(
+                    "hamsa_primary_shutdown_error "
+                    "%s "
+                    "stage=%s",
+                    exception_fields(),
+                    conversation_state.get("stage", "new")
                 )    
 
         # ====================================================
@@ -8083,36 +8288,43 @@ async def asterisk_media(
 
         # ========================================================
         # Post-call processing
+        #
+        # Only for an authenticated call, and only with the tenant
+        # verified by authorize_media_start(). A rejected or
+        # unauthenticated connection has no verified tenant (and no
+        # armed event), so it never reaches the post-call client.
         # ========================================================
 
-        post_call_client = (
-            PostCallClient()
-        )
+        if media_authorization is not None:
 
-        try:
-
-            await dispatch_post_call_event(
-                conversation_state=
-                    conversation_state,
-
-                tenant_id=
-                    tenant_id,
-
-                channel_id=(
-                    session.channel_id
-                    if session is not None
-                    else "unknown"
-                ),
-
-                client=
-                    post_call_client,
+            post_call_client = (
+                PostCallClient()
             )
 
-        finally:
+            try:
 
-            await (
-                post_call_client.close()
-            )
+                await dispatch_post_call_event(
+                    conversation_state=
+                        conversation_state,
+
+                    tenant_id=
+                        media_authorization.tenant_id,
+
+                    channel_id=(
+                        session.channel_id
+                        if session is not None
+                        else "unknown"
+                    ),
+
+                    client=
+                        post_call_client,
+                )
+
+            finally:
+
+                await (
+                    post_call_client.close()
+                )
         # ====================================================
         # Reset VAD
         # ====================================================

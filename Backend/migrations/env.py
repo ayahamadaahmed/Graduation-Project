@@ -3,8 +3,8 @@ from logging.config import fileConfig
 from alembic import context
 
 from app.core.config import get_settings
+from app.core.db_target import ensure_safe_migration_target
 from app.db.base import Base
-from app.db.session import engine
 
 # Important:
 # Import ORM models so Base.metadata
@@ -15,6 +15,11 @@ import app.models  # noqa: F401
 config = context.config
 
 settings = get_settings()
+
+# Refuse an unintended target before any migration step (online or
+# offline): APP_ENV=staging in the process environment and an explicit,
+# approved DB_NAME are required (app/core/db_target.py).
+ensure_safe_migration_target(settings)
 
 
 if config.config_file_name is not None:
@@ -51,6 +56,9 @@ def run_migrations_online() -> None:
     Run migrations using the existing
     SQLAlchemy SQL Server engine.
     """
+
+    # Imported only after the target guard above has passed.
+    from app.db.session import engine
 
     with engine.connect() as connection:
 

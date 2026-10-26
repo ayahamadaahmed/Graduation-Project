@@ -93,8 +93,10 @@ def is_plausible_name_candidate(
     """
     Basic structural validation only.
 
-    We intentionally do NOT require two words because a
-    caller may initially provide only one name.
+    A candidate must contain 2 to 6 words (at most 120
+    characters after normalization), and every word must
+    consist only of Latin or Arabic letters. A single name
+    on its own is therefore NOT a valid candidate.
 
     We also do not attempt to guess whether a real person
     has this name.
@@ -167,7 +169,8 @@ def arbitrate_name_transcripts(
     Rules:
     - Both providers agree -> accept Hamsa's original text.
     - Only Hamsa is valid -> accept Hamsa.
-    - Only Deepgram is valid -> accept Deepgram.
+    - Only Deepgram is valid -> retry. A name confirmed
+      only by Deepgram is never accepted.
     - Both valid but disagree -> retry.
     - Neither valid -> retry.
 

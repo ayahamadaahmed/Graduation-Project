@@ -49,6 +49,12 @@ from contextlib import (
 from mcp_server.backend_client import (
     backend_client,
 )
+from mcp_server.auth import (
+    authorize_mcp_request,
+)
+from mcp_server.config import (
+    get_mcp_settings,
+)
 logger = logging.getLogger(
     "uvicorn.error"
 )
@@ -57,6 +63,14 @@ logger = logging.getLogger(
 async def mcp_lifespan(
     server: FastMCP,
 ) -> AsyncIterator[dict]:
+
+    if get_mcp_settings().auth_mode != "enforce":
+
+        logger.warning(
+            "mcp_service_auth_mode=audit "
+            "calls without a service token "
+            "are still served"
+        )
 
     await (
         backend_client.start()
@@ -112,6 +126,9 @@ def _require_request_tenant_id(
     Fail closed:
     MCP tools must never silently fall back
     to a global/default tenant.
+
+    Every tool calls this first, so it also
+    authenticates the caller for all tools.
     """
 
     request_context = (
@@ -143,6 +160,23 @@ def _require_request_tenant_id(
             "MCP request does not contain "
             "HTTP headers."
         )
+
+    # Agent -> MCP credential, checked before the
+    # tenant is read (mcp_server/auth.py).
+    client = getattr(
+        request,
+        "client",
+        None,
+    )
+
+    authorize_mcp_request(
+        headers,
+        client_host=getattr(
+            client,
+            "host",
+            None,
+        ),
+    )
 
     raw_tenant_id = (
         headers.get(
@@ -490,6 +524,11 @@ async def list_available_slots(
 ):
     """
     List available appointment slots.
+
+    Diagnostic labs book without a doctor: omit doctor_id; their
+    slots have doctor_id null. Each slot carries branch_id and
+    branch names, so same-time slots at different branches can be
+    told apart.
     """
 
     tenant_id = (
@@ -711,6 +750,8 @@ async def update_patient_profile(
 
     patient_id: str,
 
+    national_id: str,
+
     channel: Literal[
         "web",
         "mobile",
@@ -752,6 +793,9 @@ async def update_patient_profile(
 
             patient_id=
                 patient_id,
+
+            national_id=
+                national_id,
 
             patient_name=
                 patient_name,

@@ -5,6 +5,7 @@ from dotenv import (
 )
 from app.api.routers import (
     staff_patients,
+    staff_ehr,
 )
 from langchain_openai import (
     ChatOpenAI,
@@ -18,7 +19,11 @@ from contextlib import (
     asynccontextmanager,
 )
 from app.db.session import (
+    settings as database_settings,
     warm_db_pool,
+)
+from app.core.db_target import (
+    ensure_safe_database_target,
 )
 from fastapi import (
     FastAPI,
@@ -38,21 +43,28 @@ from sqlalchemy.exc import (
 )
 
 from app.api.routers import (
+    admin_catalog,
     admin_working_hours,
     appointments,
     catalog,
     health,
+    ops,
     patients,
     post_call,
     public_catalog,
     medmind_ai,
     diagnostics,
+    search,
+)
+from medmind.env_precedence import (
+    keep_process_auth_settings,
 )
 from medmind.response_verbalizer import (
     QwenResponseVerbalizer,
 )
 from app.core.config import (
     get_settings,
+    staging_selected,
 )
 
 from app.services.medmind_registry import (
@@ -93,6 +105,35 @@ settings = get_settings()
 
 
 # ============================================================
+# QWEN PLANNER WARM-UP
+# ============================================================
+
+async def warm_qwen_planner(
+    planner,
+    *,
+    enabled: bool,
+) -> None:
+    """
+    Best-effort Groq connection warm-up (a models.list
+    call, no completion). QWEN_PLANNER_WARMUP=false skips
+    only this call, e.g. for staging checks that must not
+    contact Groq at startup; the planner itself is
+    unchanged and works normally.
+    """
+
+    if not enabled:
+
+        logger.info(
+            "qwen_planner_warmup status=disabled "
+            "reason=QWEN_PLANNER_WARMUP=false"
+        )
+
+        return
+
+    await planner.warmup()
+
+
+# ============================================================
 # APPLICATION LIFESPAN
 # ============================================================
 
@@ -105,9 +146,33 @@ async def lifespan(
         time.perf_counter()
     )
 
-    load_dotenv(
-        override=True
+    # Staging must name its database explicitly and never use the
+    # production one. Checked against the settings the engine was
+    # built from, before the first connection (warm_db_pool below).
+    ensure_safe_database_target(
+        database_settings
     )
+
+    # .env may update other settings, but never replaces a
+    # shell-provided auth-chain value (medmind/env_precedence.py).
+    # With APP_ENV=staging in the process environment no .env is
+    # loaded at all (app/core/config.py, staging_selected).
+    if not staging_selected():
+
+        with keep_process_auth_settings():
+
+            load_dotenv(
+                override=True
+            )
+
+    if settings.booking_service_auth_mode != "enforce":
+
+        # Transitional (app/security/booking_auth.py): booking and
+        # patient requests without a service token are still served.
+        logger.warning(
+            "booking_service_auth_mode=audit "
+            "requests without a service token are still served"
+        )
 
     rag_warmup_started = (
         time.perf_counter()
@@ -363,7 +428,10 @@ async def lifespan(
         service_tier=qwen_service_tier,
     )
 
-    await qwen_planner.warmup()
+    await warm_qwen_planner(
+        qwen_planner,
+        enabled=settings.qwen_planner_warmup,
+    )
 
     # ========================================================
     # SHARED RESPONSE VERBALIZER
@@ -650,6 +718,11 @@ app.include_router(
 )
 
 app.include_router(
+    public_catalog.blueprint_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
     admin_working_hours.router,
     prefix="/api/v1",
 )
@@ -686,4 +759,49 @@ app.include_router(
 app.include_router(
     staff_patients.router,
     prefix="/api/v1",
+)
+app.include_router(
+    staff_ehr.router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    search.router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    admin_catalog.router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    ops.router,
+    prefix="/api/v1",
+)
+
+# Readiness alias for the weekly-plan contract; same check as GET /health.
+app.add_api_route(
+    "/ready",
+    health.readiness,
+    methods=["GET"],
+    tags=["health"],
+    response_model=None,
+)
+
+# API Blueprint paths under /api/v1; the same check as /health and /ready.
+app.add_api_route(
+    "/api/v1/health",
+    health.readiness,
+    methods=["GET"],
+    tags=["health"],
+    response_model=None,
+)
+
+app.add_api_route(
+    "/api/v1/ready",
+    health.readiness,
+    methods=["GET"],
+    tags=["health"],
+    response_model=None,
 )

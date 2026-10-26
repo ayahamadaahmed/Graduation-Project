@@ -92,6 +92,7 @@ async def update_patient_profile(
     *,
     tenant_id: str,
     patient_id: str,
+    national_id: str,
     patient_name: str | None,
     phone: str | None,
     language: Literal[
@@ -107,6 +108,9 @@ async def update_patient_profile(
 ):
 
     payload = {
+        "national_id":
+            national_id,
+
         "language":
             language,
 
