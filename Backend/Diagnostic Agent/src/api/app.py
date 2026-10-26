@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 import logging
 from time import perf_counter
+from dotenv import load_dotenv
 
 from fastapi import (
     FastAPI,
@@ -40,6 +41,14 @@ from src.diagnostics.pathology_pipeline import (
 from src.diagnostics.pathology_persistence_contract import (
     PathologyPersistenceContractBuilder,
     PathologyPersistenceContractError,
+)
+
+# The backend and Diagnostic Agent are separate processes. Load the shared
+# backend environment file explicitly so the pathology vision provider can
+# read OPENAI_API_KEY without exposing it to the browser.
+load_dotenv(
+    Path(__file__).resolve().parents[3] / ".env",
+    override=False,
 )
 
 # ============================================================

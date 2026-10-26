@@ -24,10 +24,10 @@ conda activate healthcare-booking311
 .\setup.ps1
 ```
 
-Or:
+Or install the complete Backend runtime directly:
 
 ```powershell
-python -m pip install -r requirements.txt
+conda run -n healthcare-booking311 python -m pip install -r requirements-prod.txt
 Copy-Item .env.example .env
 ```
 

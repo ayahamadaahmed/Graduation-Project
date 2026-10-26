@@ -40,6 +40,8 @@ uploads/
 
 # Models / artifacts
 models/
+!app/models/
+!app/models/**
 checkpoints/
 *.bin
 *.pt
@@ -56,16 +58,18 @@ build/
 artifacts/
 *.safetensors
 *.zip
-models/
-checkpoints/
 
 # Database backups and sensitive exports
 /Database
 /Database file.sql
 *.bak
+/data/sqlserver/
 
 
 # Include trained Diagnostic Agent models
 !Diagnostic Agent/models/
 !Diagnostic Agent/models/**
+!app/models/
+!app/models/**
+app/models/__pycache__/
 

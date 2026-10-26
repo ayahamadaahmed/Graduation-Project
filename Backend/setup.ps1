@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-python -m pip install -r requirements.txt
+conda run -n healthcare-booking311 python -m pip install -r requirements-prod.txt
 
 if (-not (Test-Path ".env")) {
     Copy-Item ".env.example" ".env"
