@@ -1,5 +1,6 @@
 from __future__ import annotations
 import os
+from pathlib import Path
 from dotenv import (
   load_dotenv,
 )
@@ -27,6 +28,7 @@ from fastapi import (
 
 from fastapi.responses import (
     JSONResponse,
+    FileResponse,
 )
 
 from app.integrations.diagnostic_agent_client import (
@@ -557,6 +559,18 @@ app = FastAPI(
 
     lifespan=lifespan,
 )
+
+
+@app.get(
+    "/diagnostic-chat",
+    include_in_schema=False,
+)
+def diagnostic_chat_page() -> FileResponse:
+    """Serve the local diagnostic chat workbench."""
+    return FileResponse(
+        Path(__file__).parent / "static" / "diagnostic-chat.html",
+        media_type="text/html",
+    )
 
 
 # ============================================================

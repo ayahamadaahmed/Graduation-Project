@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>MedMind | Diagnostic Chat</title>
+  <style>
+    :root{font-family:"Segoe UI",Tahoma,Arial,sans-serif;color:#182a3a;background:#f3f7f7;font-synthesis:none;text-rendering:optimizeLegibility;--teal:#087e7b;--deep:#123b48;--muted:#71818a;--line:#dce7e7}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 92% 0,#e0f2ee 0,transparent 38%),#f3f7f7}
+    .shell{max-width:1080px;margin:auto;padding:26px 20px 34px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}.brand{display:flex;align-items:center;gap:12px}.mark{display:grid;place-items:center;width:44px;height:44px;border-radius:15px;background:var(--deep);color:#fff;font-size:23px}.brand h1{font-size:19px;margin:0 0 3px}.brand p{font-size:12px;color:var(--muted);margin:0}.api-pill{font-size:12px;color:#256661;background:#e2f3ef;border:1px solid #c9e7df;padding:8px 12px;border-radius:99px;white-space:nowrap}
+    .layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px;align-items:stretch}.panel,.chat{background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 12px 35px #123b4809}.panel{padding:20px}.panel h2{font-size:15px;margin:0 0 5px}.sub{font-size:12px;line-height:1.7;color:var(--muted);margin:0 0 20px}.field{margin:0 0 15px}.field label{display:block;font-size:12px;font-weight:650;margin-bottom:7px}.field input,.field select,.composer textarea{width:100%;border:1px solid var(--line);border-radius:11px;background:#fbfdfd;color:#182a3a;font:inherit;outline:none}.field input,.field select{height:40px;padding:0 11px}.field input:focus,.field select:focus,.composer textarea:focus{border-color:#69b7ac;box-shadow:0 0 0 3px #d8f0eb}.helper{font-size:11px;line-height:1.65;color:var(--muted);margin:6px 0 0}.divider{height:1px;background:var(--line);margin:18px 0}.safety{border-radius:12px;background:#fff8e9;color:#70551c;font-size:11px;line-height:1.75;padding:11px 12px}
+    .chat{min-height:680px;display:flex;flex-direction:column;overflow:hidden}.chat-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px}.chat-head h2{font-size:15px;margin:0 0 4px}.chat-head p{font-size:11px;color:var(--muted);margin:0}.new-session{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 11px;color:var(--deep);font:inherit;font-size:12px;cursor:pointer}.messages{flex:1;min-height:340px;max-height:55vh;overflow:auto;padding:22px;display:flex;flex-direction:column;gap:14px}.welcome{margin:auto;text-align:center;max-width:420px;color:var(--muted);line-height:1.8;font-size:13px}.welcome-icon{margin:0 auto 12px;width:48px;height:48px;display:grid;place-items:center;background:#eaf6f3;border-radius:16px;color:var(--teal);font-size:23px}.bubble{max-width:min(82%,620px);padding:12px 15px;border-radius:16px;font-size:13px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}.bubble.user{align-self:flex-start;background:#eaf5f3;border:1px solid #d9ebe7;border-bottom-right-radius:5px}.bubble.assistant{align-self:flex-end;background:#f5f7fa;border:1px solid #e8edf1;border-bottom-left-radius:5px}.bubble .caption{font-size:10px;color:var(--muted);margin-bottom:5px}.bubble img{display:block;max-width:220px;max-height:170px;object-fit:cover;border-radius:9px;margin-top:8px}.composer{border-top:1px solid var(--line);padding:15px 18px 17px}.composer textarea{resize:vertical;min-height:74px;padding:11px 12px;font-size:13px}.compose-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}.file-pick{display:flex;align-items:center;gap:8px;min-width:0}.file-pick input{display:none}.file-button,.send{border:0;border-radius:11px;padding:10px 15px;font:inherit;font-size:12px;font-weight:650;cursor:pointer}.file-button{background:#eef4f4;color:var(--deep);white-space:nowrap}.file-name{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}.send{background:var(--teal);color:#fff;min-width:100px}.send:disabled{opacity:.55;cursor:wait}.notice{min-height:18px;margin-top:9px;color:var(--muted);font-size:11px}.notice.error{color:#b33434}.notice.ok{color:#247558}.meta{margin-top:6px;font-size:10px;color:var(--muted)}
+    @media(max-width:780px){.shell{padding:16px 12px}.layout{grid-template-columns:1fr}.panel{padding:15px}.panel .fields{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}.panel .sub{margin-bottom:13px}.divider,.safety{display:none}.chat{min-height:65vh}.messages{max-height:48vh;padding:16px}.api-pill{display:none}}
+    @media(max-width:480px){.panel .fields{grid-template-columns:1fr}.compose-bottom{align-items:stretch;flex-direction:column}.send{width:100%}.file-name{max-width:58vw}.bubble{max-width:92%}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top">
+      <div class="brand"><div class="mark">✚</div><div><h1>MedMind Diagnostic</h1><p>واجهة محلية لتجربة التحاليل والأشعة من خلال الـ Backend</p></div></div>
+      <div class="api-pill">● متصلة بنفس عنوان الـ Backend</div>
+    </header>
+    <div class="layout">
+      <aside class="panel">
+        <h2>إعدادات الجلسة</h2>
+        <p class="sub">اختاري نوع الصورة والجهة الطبية قبل بدء المحادثة.</p>
+        <div class="fields">
+          <div class="field"><label for="tenant">Tenant ID</label><input id="tenant" value="clinic-001" autocomplete="off"><p class="helper">لازم يطابق tenant_key لجهة موجودة في قاعدة البيانات.</p></div>
+          <div class="field"><label for="kind">نوع المرفق</label><select id="kind"><option value="pathology">صورة تحليل معمل</option><option value="chest_xray">أشعة صدر (Chest X-ray)</option><option value="brain_mri">رنين مخ (Brain MRI)</option><option value="kidney_ct">مقطعية كلى (Kidney CT)</option></select></div>
+          <div class="field"><label for="patient">Patient ID (اختياري)</label><input id="patient" placeholder="UUID" autocomplete="off"></div>
+          <div class="field"><label for="encounter">Encounter ID (اختياري)</label><input id="encounter" placeholder="UUID" autocomplete="off"><p class="helper">لو كتبتي Encounter ID، لازم تضيفي Patient ID كمان.</p></div>
+        </div>
+        <div class="divider"></div>
+        <div class="safety">النتائج المعروضة دعم مبدئي للمراجعة فقط، وليست تشخيصًا طبيًا نهائيًا.</div>
+      </aside>
+      <section class="chat" aria-label="Diagnostic chat">
+        <header class="chat-head"><div><h2>محادثة تحليل</h2><p id="sessionLabel"></p></div><button class="new-session" id="newSession" type="button">جلسة جديدة</button></header>
+        <div class="messages" id="messages" aria-live="polite"><div class="welcome" id="welcome"><div class="welcome-icon">✧</div><strong>ابدئي من هنا</strong><br>اختاري نوع الصورة، ارفعي ملف JPG أو PNG، واكتبي سؤالك. الواجهة ترفع الصورة ثم ترسلها للشات في نفس الجلسة.</div></div>
+        <form class="composer" id="chatForm">
+          <textarea id="message" maxlength="4000" required placeholder="مثال: حلل صورة التحليل دي واشرحلي القيم المهمة..."></textarea>
+          <div class="compose-bottom"><div class="file-pick"><label class="file-button" for="file">＋ إرفاق صورة</label><input id="file" type="file" accept="image/jpeg,image/png"><span class="file-name" id="fileName">مفيش صورة مرفقة</span></div><button class="send" id="send" type="submit">إرسال للمساعد ←</button></div>
+          <div class="notice" id="notice" role="status"></div>
+          <div class="meta">الملف يُرفع إلى الـ Backend المحلي، ومفتاح API لا يُرسل للمتصفح.</div>
+        </form>
+      </section>
+    </div>
+  </main>
+  <script>
+    (() => {
+      const $ = (id) => document.getElementById(id);
+      const sessionKey = "medmind-diagnostic-chat-session";
+      const sessionId = () => {
+        let value = sessionStorage.getItem(sessionKey);
+        if (!value) {
+          value = `diagnostic-${crypto.randomUUID()}`;
+          sessionStorage.setItem(sessionKey, value);
+        }
+        return value;
+      };
+      const updateSessionLabel = () => { $("sessionLabel").textContent = `رقم الجلسة: ${sessionId()}`; };
+      const notice = (message, kind = "") => { const el = $("notice"); el.textContent = message; el.className = `notice ${kind}`; };
+      const addBubble = (role, text, imageUrl) => {
+        $("welcome")?.remove();
+        const bubble = document.createElement("div");
+        bubble.className = `bubble ${role}`;
+        const caption = document.createElement("div"); caption.className = "caption"; caption.textContent = role === "user" ? "أنتِ" : "MedMind";
+        const content = document.createElement("div"); content.textContent = text;
+        bubble.append(caption, content);
+        if (imageUrl) { const image = document.createElement("img"); image.src = imageUrl; image.alt = "الصورة المرفقة"; image.addEventListener("load", () => URL.revokeObjectURL(imageUrl), { once: true }); bubble.append(image); }
+        $("messages").append(bubble); $("messages").scrollTop = $("messages").scrollHeight;
+      };
+      const errorMessage = async (response) => {
+        let data;
+        try { data = await response.json(); } catch { return `حصل خطأ من السيرفر (${response.status}).`; }
+        return data?.detail?.message || data?.detail?.code || data?.message || `حصل خطأ من السيرفر (${response.status}).`;
+      };
+      $("file").addEventListener("change", () => {
+        const file = $("file").files[0];
+        $("fileName").textContent = file ? file.name : "مفيش صورة مرفقة";
+        notice("");
+      });
+      $("newSession").addEventListener("click", () => {
+        sessionStorage.removeItem(sessionKey); updateSessionLabel(); $("messages").replaceChildren();
+        const welcome = document.createElement("div"); welcome.className = "welcome"; welcome.id = "welcome";
+        welcome.innerHTML = '<div class="welcome-icon">✧</div><strong>جلسة جديدة</strong><br>ارفعي صورة واكتبي سؤالك لبدء محادثة جديدة.';
+        $("messages").append(welcome); notice("");
+      });
+      $("chatForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const file = $("file").files[0];
+        const message = $("message").value.trim();
+        const tenant = $("tenant").value.trim();
+        if (!tenant) { notice("اكتبي Tenant ID الأول.", "error"); return; }
+        if (!message) { notice("اكتبي رسالة للمساعد.", "error"); return; }
+        if (!file) { notice("ارفعي صورة التحليل أو الأشعة الأول.", "error"); return; }
+        if (file && !["image/jpeg", "image/png"].includes(file.type)) { notice("المسموح صورة JPG أو PNG فقط.", "error"); return; }
+        const button = $("send"); button.disabled = true; button.textContent = "جاري الإرسال…"; notice("جاري رفع الصورة وتجهيز الطلب…");
+        const imageUrl = file ? URL.createObjectURL(file) : null;
+        try {
+          let attachmentId;
+          if (file) {
+            const upload = new FormData(); upload.append("session_id", sessionId()); upload.append("file", file);
+            if ($("patient").value.trim()) upload.append("patient_id", $("patient").value.trim());
+            if ($("encounter").value.trim()) upload.append("encounter_id", $("encounter").value.trim());
+            const uploaded = await fetch(`${location.origin}/api/v1/diagnostics/attachments`, { method: "POST", headers: { "X-Tenant-ID": tenant }, body: upload });
+            if (!uploaded.ok) throw new Error(await errorMessage(uploaded));
+            attachmentId = (await uploaded.json()).attachment_id;
+          }
+          const kind = $("kind").value;
+          const modalityPrompt = {
+            pathology: "حلل صورة تحليل المختبر المرفقة واشرح النتائج بلغة بسيطة وبشكل آمن.",
+            chest_xray: "حلل أشعة الصدر المرفقة (chest X-ray) واشرح النتيجة بشكل آمن.",
+            brain_mri: "حلل الرنين المغناطيسي للمخ المرفق (brain MRI) واشرح النتيجة بشكل آمن.",
+            kidney_ct: "حلل الأشعة المقطعية على الكلى المرفقة (kidney CT) واشرح النتيجة بشكل آمن."
+          }[kind];
+          const chatMessage = `${modalityPrompt}\n\n${message}`;
+          const response = await fetch(`${location.origin}/api/v1/ai/chat`, {
+            method: "POST", headers: { "Content-Type": "application/json", "X-Tenant-ID": tenant },
+            body: JSON.stringify({ session_id: sessionId(), message: chatMessage, channel: "web", attachment_ids: attachmentId ? [attachmentId] : [] })
+          });
+          if (!response.ok) throw new Error(await errorMessage(response));
+          const data = await response.json();
+          addBubble("user", message, imageUrl);
+          addBubble("assistant", data.reply || "وصل رد فاضي من المساعد.");
+          $("message").value = ""; $("file").value = ""; $("fileName").textContent = "مفيش صورة مرفقة";
+          notice(`اكتمل الطلب${data.route ? ` • المسار: ${data.route}` : ""}`, "ok");
+        } catch (error) {
+          notice(error.message || "تعذر الاتصال بالـ Backend. تأكدي أن الخدمة تعمل وأن إعداداتها مكتملة.", "error");
+        } finally {
+          button.disabled = false; button.textContent = "إرسال للمساعد ←";
+          if (imageUrl && $("file").files[0]) URL.revokeObjectURL(imageUrl);
+        }
+      });
+      updateSessionLabel();
+    })();
+  </script>
+</body>
+</html>
