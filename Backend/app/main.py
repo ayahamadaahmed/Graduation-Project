@@ -25,6 +25,7 @@ from fastapi import (
     FastAPI,
     Request,
 )
+from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi.responses import (
     JSONResponse,
@@ -560,6 +561,16 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+    ],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "X-Tenant-ID"],
+)
+
 
 @app.get(
     "/diagnostic-chat",
@@ -568,7 +579,9 @@ app = FastAPI(
 def diagnostic_chat_page() -> FileResponse:
     """Serve the local diagnostic chat workbench."""
     return FileResponse(
-        Path(__file__).parent / "static" / "diagnostic-chat.html",
+        Path(__file__).resolve().parents[2]
+        / "Frontend"
+        / "index.html",
         media_type="text/html",
     )
 

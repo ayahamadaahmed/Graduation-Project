@@ -49,6 +49,10 @@
   <script>
     (() => {
       const $ = (id) => document.getElementById(id);
+      const apiBase = (
+        new URLSearchParams(location.search).get("api") ||
+        "http://127.0.0.1:8000"
+      ).replace(/\/+$/, "");
       const sessionKey = "medmind-diagnostic-chat-session";
       const sessionId = () => {
         let value = sessionStorage.getItem(sessionKey);
@@ -103,7 +107,7 @@
             const upload = new FormData(); upload.append("session_id", sessionId()); upload.append("file", file);
             if ($("patient").value.trim()) upload.append("patient_id", $("patient").value.trim());
             if ($("encounter").value.trim()) upload.append("encounter_id", $("encounter").value.trim());
-            const uploaded = await fetch(`${location.origin}/api/v1/diagnostics/attachments`, { method: "POST", headers: { "X-Tenant-ID": tenant }, body: upload });
+            const uploaded = await fetch(`${apiBase}/api/v1/diagnostics/attachments`, { method: "POST", headers: { "X-Tenant-ID": tenant }, body: upload });
             if (!uploaded.ok) throw new Error(await errorMessage(uploaded));
             attachmentId = (await uploaded.json()).attachment_id;
           }
@@ -115,7 +119,7 @@
             kidney_ct: "حلل الأشعة المقطعية على الكلى المرفقة (kidney CT) واشرح النتيجة بشكل آمن."
           }[kind];
           const chatMessage = `${modalityPrompt}\n\n${message}`;
-          const response = await fetch(`${location.origin}/api/v1/ai/chat`, {
+          const response = await fetch(`${apiBase}/api/v1/ai/chat`, {
             method: "POST", headers: { "Content-Type": "application/json", "X-Tenant-ID": tenant },
             body: JSON.stringify({ session_id: sessionId(), message: chatMessage, channel: "web", attachment_ids: attachmentId ? [attachmentId] : [] })
           });
