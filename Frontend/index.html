@@ -24,10 +24,9 @@
     <div class="layout">
       <aside class="panel">
         <h2>إعدادات الجلسة</h2>
-        <p class="sub">اختاري نوع الصورة والجهة الطبية قبل بدء المحادثة.</p>
+        <p class="sub">ارفعي الصورة واكتبي سؤالك؛ النظام يحاول تحديد نوعها تلقائيًا قبل تحليلها.</p>
         <div class="fields">
-          <div class="field"><label for="tenant">Tenant ID</label><input id="tenant" value="clinic-001" autocomplete="off"><p class="helper">لازم يطابق tenant_key لجهة موجودة في قاعدة البيانات.</p></div>
-          <div class="field"><label for="kind">نوع المرفق</label><select id="kind"><option value="pathology">صورة تحليل معمل</option><option value="chest_xray">أشعة صدر (Chest X-ray)</option><option value="brain_mri">رنين مخ (Brain MRI)</option><option value="kidney_ct">مقطعية كلى (Kidney CT)</option></select></div>
+          <div class="field"><label for="tenant">Tenant ID</label><input id="tenant" value="lab-001" autocomplete="off"><p class="helper">استخدمي جهة مفعّل لها التحليل؛ المختبر التجريبي هو lab-001.</p></div>
           <div class="field"><label for="patient">Patient ID (اختياري)</label><input id="patient" placeholder="UUID" autocomplete="off"></div>
           <div class="field"><label for="encounter">Encounter ID (اختياري)</label><input id="encounter" placeholder="UUID" autocomplete="off"><p class="helper">لو كتبتي Encounter ID، لازم تضيفي Patient ID كمان.</p></div>
         </div>
@@ -36,12 +35,12 @@
       </aside>
       <section class="chat" aria-label="Diagnostic chat">
         <header class="chat-head"><div><h2>محادثة تحليل</h2><p id="sessionLabel"></p></div><button class="new-session" id="newSession" type="button">جلسة جديدة</button></header>
-        <div class="messages" id="messages" aria-live="polite"><div class="welcome" id="welcome"><div class="welcome-icon">✧</div><strong>ابدئي من هنا</strong><br>اختاري نوع الصورة، ارفعي ملف JPG أو PNG، واكتبي سؤالك. الواجهة ترفع الصورة ثم ترسلها للشات في نفس الجلسة.</div></div>
+        <div class="messages" id="messages" aria-live="polite"><div class="welcome" id="welcome"><div class="welcome-icon">✧</div><strong>ابدئي من هنا</strong><br>ارفعي صورة لما تحتاجي تحليلها، أو اسألي سؤال متابعة من غير ما ترفعيها تاني.</div></div>
         <form class="composer" id="chatForm">
-          <textarea id="message" maxlength="4000" required placeholder="مثال: حلل صورة التحليل دي واشرحلي القيم المهمة..."></textarea>
+          <textarea id="message" maxlength="4000" required placeholder="مثال: اشرحيلي معنى النتيجة دي، أو اسألي عن عرض حسيتي بيه..."></textarea>
           <div class="compose-bottom"><div class="file-pick"><label class="file-button" for="file">＋ إرفاق صورة</label><input id="file" type="file" accept="image/jpeg,image/png"><span class="file-name" id="fileName">مفيش صورة مرفقة</span></div><button class="send" id="send" type="submit">إرسال للمساعد ←</button></div>
           <div class="notice" id="notice" role="status"></div>
-          <div class="meta">الملف يُرفع إلى الـ Backend المحلي، ومفتاح API لا يُرسل للمتصفح.</div>
+          <div class="meta">الصورة تظل في الـ Backend المحلي. عند الحاجة لمعلومة طبية خارجية، يُرسل مصطلح طبي عام فقط من غير الصورة أو بيانات تعريفية.</div>
         </form>
       </section>
     </div>
@@ -87,7 +86,7 @@
       $("newSession").addEventListener("click", () => {
         sessionStorage.removeItem(sessionKey); updateSessionLabel(); $("messages").replaceChildren();
         const welcome = document.createElement("div"); welcome.className = "welcome"; welcome.id = "welcome";
-        welcome.innerHTML = '<div class="welcome-icon">✧</div><strong>جلسة جديدة</strong><br>ارفعي صورة واكتبي سؤالك لبدء محادثة جديدة.';
+        welcome.innerHTML = '<div class="welcome-icon">✧</div><strong>جلسة جديدة</strong><br>ارفعي صورة لما تحتاجي تحليلها، أو اسألي سؤالًا طبيًا عامًا.';
         $("messages").append(welcome); notice("");
       });
       $("chatForm").addEventListener("submit", async (event) => {
@@ -97,9 +96,8 @@
         const tenant = $("tenant").value.trim();
         if (!tenant) { notice("اكتبي Tenant ID الأول.", "error"); return; }
         if (!message) { notice("اكتبي رسالة للمساعد.", "error"); return; }
-        if (!file) { notice("ارفعي صورة التحليل أو الأشعة الأول.", "error"); return; }
         if (file && !["image/jpeg", "image/png"].includes(file.type)) { notice("المسموح صورة JPG أو PNG فقط.", "error"); return; }
-        const button = $("send"); button.disabled = true; button.textContent = "جاري الإرسال…"; notice("جاري رفع الصورة وتجهيز الطلب…");
+        const button = $("send"); button.disabled = true; button.textContent = "جاري الإرسال…"; notice(file ? "جاري رفع الصورة وتجهيز الطلب…" : "جاري إرسال سؤالك…");
         const imageUrl = file ? URL.createObjectURL(file) : null;
         try {
           let attachmentId;
@@ -111,17 +109,11 @@
             if (!uploaded.ok) throw new Error(await errorMessage(uploaded));
             attachmentId = (await uploaded.json()).attachment_id;
           }
-          const kind = $("kind").value;
-          const modalityPrompt = {
-            pathology: "حلل صورة تحليل المختبر المرفقة واشرح النتائج بلغة بسيطة وبشكل آمن.",
-            chest_xray: "حلل أشعة الصدر المرفقة (chest X-ray) واشرح النتيجة بشكل آمن.",
-            brain_mri: "حلل الرنين المغناطيسي للمخ المرفق (brain MRI) واشرح النتيجة بشكل آمن.",
-            kidney_ct: "حلل الأشعة المقطعية على الكلى المرفقة (kidney CT) واشرح النتيجة بشكل آمن."
-          }[kind];
-          const chatMessage = `${modalityPrompt}\n\n${message}`;
+          const chatPayload = { session_id: sessionId(), message, channel: "web", attachment_ids: attachmentId ? [attachmentId] : [] };
+          if (file) chatPayload.diagnostic_mode = "auto_image";
           const response = await fetch(`${apiBase}/api/v1/ai/chat`, {
             method: "POST", headers: { "Content-Type": "application/json", "X-Tenant-ID": tenant },
-            body: JSON.stringify({ session_id: sessionId(), message: chatMessage, channel: "web", attachment_ids: attachmentId ? [attachmentId] : [] })
+            body: JSON.stringify(chatPayload)
           });
           if (!response.ok) throw new Error(await errorMessage(response));
           const data = await response.json();

@@ -43,6 +43,42 @@ class SafeDiagnosticExplanationService:
         "unknown": "غير محدد",
     }
 
+    _LAB_LABELS_AR = {
+        "hemoglobin": "الهيموجلوبين (بروتين ينقل الأكسجين)",
+        "rbc": "عدد كرات الدم الحمراء",
+        "hematocrit": "نسبة حجم كرات الدم الحمراء في الدم",
+        "mcv": "متوسط حجم كرية الدم الحمراء",
+        "mch": "متوسط كمية الهيموجلوبين في كرية الدم الحمراء",
+        "mchc": "متوسط تركيز الهيموجلوبين في كرات الدم الحمراء",
+        "rdw": "اختلاف أحجام كرات الدم الحمراء (RDW)",
+        "rdw_cv": "اختلاف أحجام كرات الدم الحمراء (RDW-CV)",
+        "rdw_sd": "اختلاف أحجام كرات الدم الحمراء (RDW-SD)",
+        "wbc": "عدد كرات الدم البيضاء (خلايا الدفاع)",
+        "platelets": "عدد الصفائح الدموية",
+        "neutrophils_percent": "نسبة العدلات، وهي نوع من كرات الدم البيضاء",
+        "neutrophils_absolute": "العدد المطلق للعدلات، وهي نوع من كرات الدم البيضاء",
+        "lymphocytes_percent": "نسبة الخلايا الليمفاوية، وهي نوع من كرات الدم البيضاء",
+        "lymphocytes_absolute": "العدد المطلق للخلايا الليمفاوية",
+        "monocytes_percent": "نسبة الخلايا الوحيدة، وهي نوع من كرات الدم البيضاء",
+        "monocytes_absolute": "العدد المطلق للخلايا الوحيدة",
+        "eosinophils_percent": "نسبة الخلايا الحمضية، وهي نوع من كرات الدم البيضاء",
+        "eosinophils_absolute": "العدد المطلق للخلايا الحمضية",
+        "basophils_percent": "نسبة الخلايا القاعدية، وهي نوع من كرات الدم البيضاء",
+        "basophils_absolute": "العدد المطلق للخلايا القاعدية",
+        "esr": "سرعة ترسيب الدم",
+        "vitamin_d_25oh": "فيتامين د (25-OH)",
+        "vitamin_d2": "فيتامين د2",
+        "vitamin_d3": "فيتامين د3",
+        "vitamin_d_1_25oh2": "فيتامين د النشط (1,25-OH₂)",
+        "ferritin": "الفيريتين (مخزون الحديد)",
+        "serum_iron": "الحديد في الدم",
+        "tibc": "السعة الكلية لارتباط الحديد (TIBC)",
+        "transferrin_saturation": "نسبة تشبع الترانسفيرين بالحديد",
+        "vitamin_b12": "فيتامين ب12",
+        "folate": "الفولات (حمض الفوليك)",
+        "reticulocyte_count": "عدد الخلايا الشبكية (كرات دم حمراء غير مكتملة النضج)",
+    }
+
     _CLASSIFICATION_LABELS_AR = {
         "normal": "طبيعي",
         "pneumonia": "اشتباه التهاب رئوي",
@@ -339,9 +375,22 @@ class SafeDiagnosticExplanationService:
 
             return " ".join(parts)
 
+        document_type = str(
+            result.get("document_type") or ""
+        ).strip().lower()
+        is_cbc = document_type in {"cbc", "complete blood count"} or any(
+            str(item.get("panel") or "").lower() == "cbc"
+            for item in results
+            if isinstance(item, dict)
+        )
+
+        report_name = (
+            "تقرير صورة الدم الكاملة (CBC)"
+            if is_cbc
+            else "تقرير التحاليل"
+        )
         parts = [
-            "بص، أنا قريت صورة التحليل وقارنت الأرقام "
-            "بالنطاقات المرجعية المكتوبة في التقرير."
+            f"قرأت {report_name} وقارنت الأرقام بالمجالات المرجعية المكتوبة في التقرير."
         ]
 
         if abnormal:
@@ -354,15 +403,13 @@ class SafeDiagnosticExplanationService:
             ]
 
             parts.append(
-                "في شوية قيم محتاجة مراجعة: "
-                + "، ".join(rendered)
-                + "."
+                "القيم التالية خارج المجال المكتوب في التقرير:\n"
+                + "\n".join(f"• {item}" for item in rendered)
             )
 
         else:
             parts.append(
-                "مفيش قيم مقروءة طالعة أقل أو أعلى من الطبيعي "
-                "حسب المرجع الموجود في التقرير."
+                "لم تظهر قيم مقروءة خارج المجالات المرجعية المكتوبة في التقرير."
             )
 
         if uncertain:
@@ -385,9 +432,7 @@ class SafeDiagnosticExplanationService:
             )
 
         parts.append(
-            "مهم تعرف إن ده شرح مبدئي لقيم التحليل بس، "
-            "مش تشخيص نهائي، والدكتور هو اللي يربط الأرقام "
-            "بالأعراض والتاريخ المرضي وباقي الفحوصات."
+            "المعنى ببساطة: العلامة بتقول إن الرقم أقل أو أعلى من المجال الذي حدده هذا المختبر، لكنها لا تحدد سبب ذلك ولا تشخّص مرضًا. الطبيب يفسرها مع الأعراض والتاريخ الصحي وباقي الفحوصات."
         )
 
         return " ".join(parts)
@@ -399,11 +444,15 @@ class SafeDiagnosticExplanationService:
         language: str,
     ) -> str:
 
-        name = str(
-            item.get("raw_name")
-            or item.get("canonical_name")
-            or "result"
-        ).strip()
+        canonical_name = str(
+            item.get("canonical_name") or ""
+        ).strip().lower()
+        raw_name = str(item.get("raw_name") or "").strip()
+        name = (
+            self._LAB_LABELS_AR.get(canonical_name, raw_name)
+            if language == "ar"
+            else raw_name or canonical_name or "result"
+        )
 
         value = item.get("value")
 
@@ -457,10 +506,10 @@ class SafeDiagnosticExplanationService:
         )
 
         flag_text = {
-            "low": "أقل من الطبيعي حسب المرجع",
-            "high": "أعلى من الطبيعي حسب المرجع",
-            "normal": "في الطبيعي حسب المرجع",
-            "unknown": "مش متقيّم بشكل واضح",
+            "low": "أقل من المجال المكتوب في التقرير",
+            "high": "أعلى من المجال المكتوب في التقرير",
+            "normal": "داخل المجال المكتوب في التقرير",
+            "unknown": "لم يمكن تقييمه بوضوح",
         }.get(
             flag,
             flag,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from src.diagnostics.lab_image_extractor import ExtractedLabValue
@@ -18,6 +19,7 @@ CBC_NAME_ALIASES = {
     "rbc": "rbc",
     "rbc count": "rbc",
     "red blood cells": "rbc",
+    "red cell count": "rbc",
 
     # Hematocrit
     "hct": "hematocrit",
@@ -38,6 +40,11 @@ CBC_NAME_ALIASES = {
     "wbc": "wbc",
     "wbc count": "wbc",
     "white blood cells": "wbc",
+    "total leukocyte count": "wbc",
+    "total leucocyte count": "wbc",
+    "total leukocytes": "wbc",
+    "total leucocytes": "wbc",
+    "tlc": "wbc",
 
     # Platelets
     "plt": "platelets",
@@ -46,23 +53,49 @@ CBC_NAME_ALIASES = {
     "platelet count": "platelets",
 
     # Differential
+    "segmented %": "neutrophils_percent",
+    "segmented%": "neutrophils_percent",
+    "neutrophil %": "neutrophils_percent",
+    "neutrophils %": "neutrophils_percent",
     "neu%": "neutrophils_percent",
     "neutrophils%": "neutrophils_percent",
     "neutrophils": "neutrophils_percent",
 
+    "absolute neutrophils": "neutrophils_absolute",
+    "absolute neutrophil": "neutrophils_absolute",
+    "absolute neutrophil count": "neutrophils_absolute",
+    "neutrophils absolute": "neutrophils_absolute",
+    "anc": "neutrophils_absolute",
+
     "lym%": "lymphocytes_percent",
     "lymphocytes%": "lymphocytes_percent",
+    "lymphocytes %": "lymphocytes_percent",
 
     "mon%": "monocytes_percent",
     "monocytes%": "monocytes_percent",
+    "monocytes %": "monocytes_percent",
+    "absolute monocytes": "monocytes_absolute",
+    "absolute monocyte count": "monocytes_absolute",
+    "monocytes absolute": "monocytes_absolute",
 
     "eos%": "eosinophils_percent",
     "eosinophils%": "eosinophils_percent",
+    "eosinophils %": "eosinophils_percent",
+    "absolute eosinophils": "eosinophils_absolute",
+    "absolute eosinophil count": "eosinophils_absolute",
+    "eosinophils absolute": "eosinophils_absolute",
 
     "bas%": "basophils_percent",
     "basophils%": "basophils_percent",
+    "basophils %": "basophils_percent",
+    "absolute basophils": "basophils_absolute",
+    "absolute basophil count": "basophils_absolute",
+    "basophils absolute": "basophils_absolute",
 
     "lym#": "lymphocytes_absolute",
+    "absolute lymphocytes": "lymphocytes_absolute",
+    "absolute lymphocyte count": "lymphocytes_absolute",
+    "lymphocytes absolute": "lymphocytes_absolute",
     "gra#": "granulocytes_absolute",
     "gran#": "granulocytes_absolute",
     "gram#": "granulocytes_absolute",
@@ -95,6 +128,7 @@ def normalize_test_name(
         .lower()
         .replace("_", " ")
     )
+    cleaned = re.sub(r"\([^)]*\)", " ", cleaned)
 
     cleaned = " ".join(
         cleaned.split()
@@ -160,4 +194,4 @@ def find_unmapped_cbc_results(
         if normalize_test_name(result.raw_name) is None:
             unmapped.append(result)
 
-    return unmapped    
+    return unmapped

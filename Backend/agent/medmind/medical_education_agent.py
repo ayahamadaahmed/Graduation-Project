@@ -48,7 +48,9 @@ class MedicalEducationAgent:
     _ALIASES: dict[str, str] = {
         "cbc":
             "cbc complete blood count صورة الدم الكاملة تحليل صورة الدم "
-            "hemoglobin الهيموجلوبين anemia انيميا فقر الدم wbc platelets",
+            "hemoglobin الهيموجلوبين anemia انيميا فقر الدم wbc white blood cell "
+            "كرات الدم البيضاء neutrophils العدلات lymphocytes الليمفاوية "
+            "monocytes eosinophils basophils platelets الصفائح",
 
         "complete blood count":
             "cbc complete blood count صورة الدم الكاملة تحليل صورة الدم",
@@ -56,8 +58,75 @@ class MedicalEducationAgent:
         "hemoglobin":
             "hemoglobin hb الهيموجلوبين فقر الدم anemia انيميا",
 
+        "vitamin d":
+            "vitamin d فيتامين د 25-oh 25(oh)d 25-hydroxy",
+
+        "فيتامين د":
+            "vitamin d 25-oh 25-hydroxy vitamin D test",
+
+        "ferritin":
+            "ferritin الفيريتين iron stores مخزون الحديد anemia فقر الدم",
+
+        "الفيريتين":
+            "ferritin مخزون الحديد iron stores anemia فقر الدم",
+
+        "iron":
+            "iron serum iron الحديد ferritin الفيريتين tibc anemia فقر الدم",
+
+        "الحديد":
+            "iron serum iron ferritin الفيريتين tibc مخزون الحديد anemia فقر الدم",
+
+        "vitamin b12":
+            "vitamin b12 b12 cobalamin فيتامين ب12 anemia فقر الدم",
+
+        "فيتامين ب12":
+            "vitamin b12 cobalamin anemia فقر الدم",
+
+        "folate":
+            "folate folic acid حمض الفوليك الفولات anemia فقر الدم",
+
+        "حمض الفوليك":
+            "folate folic acid الفولات anemia فقر الدم",
+
         "anemia":
-            "anemia anaemia انيميا فقر الدم hemoglobin hb",
+            "anemia anaemia انيميا فقر الدم hemoglobin hb ferritin iron "
+            "vitamin b12 folate b12 cbc reticulocyte",
+
+        "فقر الدم":
+            "anemia anaemia hemoglobin ferritin iron vitamin b12 folate cbc reticulocyte",
+
+        "neutrophil":
+            "neutrophils العدلات white blood cell differential CBC صورة الدم",
+
+        "neutrophils":
+            "neutrophil العدلات white blood cell differential CBC صورة الدم",
+
+        "العدلات":
+            "neutrophils neutrophil white blood cell differential CBC صورة الدم",
+
+        "lymphocyte":
+            "lymphocytes الخلايا الليمفاوية white blood cell differential CBC صورة الدم",
+
+        "lymphocytes":
+            "lymphocyte الخلايا الليمفاوية white blood cell differential CBC صورة الدم",
+
+        "الليمفاوية":
+            "lymphocytes lymphocyte white blood cell differential CBC صورة الدم",
+
+        "monocytes":
+            "الخلايا الوحيدة monocytes white blood cell differential CBC صورة الدم",
+
+        "eosinophils":
+            "الخلايا الحمضية eosinophils white blood cell differential CBC صورة الدم",
+
+        "basophils":
+            "الخلايا القاعدية basophils white blood cell differential CBC صورة الدم",
+
+        "white blood cells":
+            "WBC كرات الدم البيضاء neutrophils lymphocytes monocytes eosinophils basophils CBC",
+
+        "كرات الدم البيضاء":
+            "WBC white blood cells neutrophils lymphocytes monocytes eosinophils basophils CBC",
 
         "diabetes":
             "diabetes السكري السكر hba1c a1c fasting glucose "

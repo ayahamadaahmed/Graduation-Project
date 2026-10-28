@@ -376,13 +376,15 @@ User question:
 Trusted knowledge base context:
 {context_text}
 
-Internal sources:
+Sources consulted (internal knowledge base and/or external medical references):
 {sources_text}
 
 Write a short, natural answer in {language_name}.
 
 Rules:
 - Use ONLY the trusted context above.
+- A PubMed article is an individual publication, not automatically a clinical guideline or medical consensus. Describe it as a study unless its source type explicitly says guideline.
+- A PubMed-indexed guideline may not apply to the user's country or care setting. Do not present it as the local official standard without verifying that applicability.
 - Do NOT diagnose the user.
 - Do NOT prescribe treatment.
 - Do NOT invent facts, symptoms, causes, numbers, or advice.
@@ -392,8 +394,8 @@ Rules:
 - Do not copy markdown headings from the context.
 - Do not use long bullet lists unless absolutely needed.
 - Include a short safety sentence that this is educational and not a final diagnosis.
-- End with: "المصدر الداخلي: {sources_text}" if Arabic.
-- End with: "Internal source: {sources_text}" if English.
+- End with: "المصادر المستخدمة: {sources_text}" if Arabic.
+- End with: "Sources used: {sources_text}" if English.
 - Return only the final patient-facing answer.
 """.strip()
 
@@ -409,7 +411,7 @@ Rules:
                         {
                             "role": "system",
                             "content": (
-                                "You rewrite trusted medical education "
+                                "You rewrite trusted medical reference "
                                 "context into a short patient-friendly "
                                 "answer. You must not diagnose, prescribe, "
                                 "or add unsupported medical facts."
@@ -481,4 +483,4 @@ Rules:
             elapsed_ms,
         )
 
-        return reply    
+        return reply

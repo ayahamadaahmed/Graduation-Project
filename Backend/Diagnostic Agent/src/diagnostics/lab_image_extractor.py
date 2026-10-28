@@ -56,7 +56,7 @@ Read the uploaded laboratory report and return JSON only.
 Required JSON format:
 
 {
-  "document_type": "cbc",
+  "document_type": "cbc, vitamin D, iron studies, or other laboratory report",
   "results": [
     {
       "raw_name": "HGB",
@@ -80,7 +80,31 @@ Rules:
 6. If only textual reference information exists, preserve it in reference_text.
 7. If something cannot be read, add a short description to unreadable_fields.
 8. Return valid JSON only.
+9. Extract all clearly readable tests on the report, not only CBC tests. This
+   includes vitamin D (25-OH/25-hydroxy vitamin D), ferritin, iron studies
+   (serum iron, TIBC, transferrin saturation), vitamin B12, and folate when
+   present. Preserve each printed name, value, unit, and reference range.
+10. Set document_type to a short description of the report or panel(s) visible;
+    do not label every laboratory report as CBC.
 """
+
+IMAGE_TYPE_CLASSIFICATION_PROMPT = """
+Classify the visible medical image type only. Do not read lab values,
+interpret findings, diagnose conditions, or recommend treatment.
+
+Return JSON only with this exact shape:
+{"category":"pathology|chest_xray|brain_mri|kidney_ct|other","confidence":0.0}
+
+Categories:
+- pathology: a photographed or scanned laboratory report with text or values
+- chest_xray: a chest radiograph
+- brain_mri: a brain MRI image or scan
+- kidney_ct: a CT image or scan of the kidneys
+- other: anything else, unreadable, or not safely identifiable
+
+Use a confidence from 0 to 1. Be conservative: choose other when unsure.
+Classify from the image itself, not its filename or the user's message.
+""".strip()
 
 class OpenAILabVisionProvider:
     def __init__(
@@ -155,6 +179,39 @@ class OpenAILabVisionProvider:
                 "an empty response."
             )
 
+        return text.strip()
+
+    def classify_image(
+        self,
+        image_bytes: bytes,
+        mime_type: str,
+    ) -> str:
+        if not image_bytes:
+            raise ValueError("image_bytes cannot be empty.")
+
+        encoded = base64.b64encode(image_bytes).decode("utf-8")
+        data_url = f"data:{mime_type};base64,{encoded}"
+        response = self.client.responses.create(
+            model=self.model_name,
+            input=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": IMAGE_TYPE_CLASSIFICATION_PROMPT,
+                        },
+                        {
+                            "type": "input_image",
+                            "image_url": data_url,
+                        },
+                    ],
+                }
+            ],
+        )
+        text = response.output_text
+        if not text:
+            raise RuntimeError("Vision image classifier returned an empty response.")
         return text.strip()
 
 

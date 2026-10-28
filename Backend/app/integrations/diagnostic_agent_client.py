@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 
-from typing import Any
+from typing import Any, Literal
 
 import httpx
 
@@ -88,6 +88,17 @@ class PathologyAgentResponse(
     results: list[
         PathologyResultResponse
     ]
+
+
+class ImageTypeClassificationResponse(BaseModel):
+    category: Literal[
+        "pathology",
+        "chest_xray",
+        "brain_mri",
+        "kidney_ct",
+        "other",
+    ]
+    confidence: float = Field(ge=0.0, le=1.0)
 
 # ============================================================
 # ERRORS
@@ -183,6 +194,47 @@ class DiagnosticAgentClient:
                 ),
             )
         )
+
+    # ========================================================
+    # IMAGE TYPE CLASSIFICATION
+    # ========================================================
+
+    async def classify_image(
+        self,
+        *,
+        image_bytes: bytes,
+        filename: str,
+        content_type: str,
+    ) -> ImageTypeClassificationResponse:
+        if not image_bytes:
+            raise ValueError("image_bytes cannot be empty.")
+
+        try:
+            response = await self._client.post(
+                f"{self.base_url}/v1/classify-image",
+                files={
+                    "file": (filename, image_bytes, content_type),
+                },
+            )
+        except (httpx.TimeoutException, httpx.NetworkError) as exc:
+            raise DiagnosticAgentUnavailableError(
+                "Diagnostic Agent is unavailable."
+            ) from exc
+
+        if response.status_code >= 400:
+            code = self._extract_error_code(response)
+            raise DiagnosticAgentRequestError(
+                code or "Diagnostic Agent image classification failed."
+            )
+
+        try:
+            return ImageTypeClassificationResponse.model_validate(
+                response.json()
+            )
+        except (ValueError, ValidationError) as exc:
+            raise DiagnosticAgentResponseError(
+                "Diagnostic Agent returned an invalid image classification."
+            ) from exc
 
     # ========================================================
     # RADIOLOGY

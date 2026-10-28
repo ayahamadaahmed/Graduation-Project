@@ -9,6 +9,9 @@ from src.diagnostics.cbc_engine import (
 from src.diagnostics.cbc_normalizer import (
     normalize_cbc_results,
 )
+from src.diagnostics.additional_lab_normalizer import (
+    normalize_additional_results,
+)
 
 from src.diagnostics.glycemic_engine import (
     GlycemicAnalysisResult,
@@ -46,6 +49,7 @@ from src.diagnostics.lab_image_extractor import (
     ExtractedLabReport,
 )
 from src.diagnostics.lab_types import (
+    LabFinding,
     LabValue,
 )
 
@@ -73,6 +77,9 @@ class PathologyProcessorResult:
     renal: RenalAnalysisResult | None = None
     liver: LiverAnalysisResult | None = None
     lipid: LipidAnalysisResult | None = None
+    additional_findings: list[LabFinding] = field(
+        default_factory=list
+    )
 
     detected_panels: list[str] = field(
         default_factory=list
@@ -135,6 +142,9 @@ class PathologyProcessor:
             report.results
         )
         lipid_values = normalize_lipid_results(
+            report.results
+        )
+        additional_values = normalize_additional_results(
             report.results
         )
 
@@ -290,6 +300,59 @@ class PathologyProcessor:
             result.detected_panels.append(
                 panel_name
             )
+
+        if additional_values:
+            result.detected_panels.append("additional_labs")
+            for item in additional_values:
+                recognized_raw_names.add(item.raw_name)
+                if item.value is None:
+                    result.value_traces.append(
+                        PathologyValueTrace(
+                            raw_name=item.raw_name,
+                            panel="additional_labs",
+                            canonical_name=item.name,
+                            value=None,
+                            unit=item.unit,
+                            reference_min=item.reference_min,
+                            reference_max=item.reference_max,
+                            reference_text=item.reference_text,
+                            flag="unknown",
+                            mapping_status="unreadable",
+                        )
+                    )
+                    result.skipped_unreadable.append(item.raw_name)
+                    continue
+
+                value = LabValue(
+                    name=item.name,
+                    value=item.value,
+                    unit=item.unit or "",
+                    reference_min=item.reference_min,
+                    reference_max=item.reference_max,
+                )
+                finding = LabFinding(
+                    name=value.name,
+                    value=value.value,
+                    unit=value.unit,
+                    flag=value.flag(),
+                    reference_min=value.reference_min,
+                    reference_max=value.reference_max,
+                )
+                result.additional_findings.append(finding)
+                result.value_traces.append(
+                    PathologyValueTrace(
+                        raw_name=item.raw_name,
+                        panel="additional_labs",
+                        canonical_name=item.name,
+                        value=item.value,
+                        unit=item.unit,
+                        reference_min=item.reference_min,
+                        reference_max=item.reference_max,
+                        reference_text=item.reference_text,
+                        flag=finding.flag.value,
+                        mapping_status="mapped",
+                    )
+                )
 
         unmapped_values = [
             item

@@ -649,6 +649,9 @@ async def chat(
             channel=
                 payload.channel,
 
+            diagnostic_mode=
+                payload.diagnostic_mode,
+
             attachment_ids=
                 trusted_attachment_ids,
 

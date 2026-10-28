@@ -103,4 +103,12 @@ class PathologyAssessmentBuilder:
                         finding
                     )
 
+        for finding in processing.additional_findings:
+            if finding.flag in {LabFlag.LOW, LabFlag.HIGH}:
+                assessment.abnormal_findings.append(finding)
+            elif finding.flag == LabFlag.NORMAL:
+                assessment.normal_findings.append(finding)
+            else:
+                assessment.unknown_findings.append(finding)
+
         return assessment

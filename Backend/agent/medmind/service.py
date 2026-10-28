@@ -19,6 +19,10 @@ from medmind.medical_education_agent import (
     MedicalEducationAgent,
     MedicalEducationStatus,
 )
+from medmind.medical_evidence import (
+    ExternalMedicalSource,
+    MedicalEvidenceRetriever,
+)
 from mcp.client.streamable_http import (
     create_mcp_http_client,
 )
@@ -455,6 +459,10 @@ class MedMindService:
 
         self.medical_education_agent = (
             MedicalEducationAgent()
+        )
+
+        self.medical_evidence_retriever = (
+            MedicalEvidenceRetriever()
         )
         
         self.nlu = (
@@ -5444,6 +5452,7 @@ class MedMindService:
     def _looks_like_medical_education_question(
         *,
         message: str,
+        history: list[Any] | None = None,
     ) -> bool:
 
         text = (
@@ -5481,6 +5490,10 @@ class MedMindService:
             return False
 
         question_terms = (
+            "يعني",
+            "وظيفة",
+            "فايدة",
+            "دور",
             "يعني ايه",
             "يعني إيه",
             "ما معنى",
@@ -5488,9 +5501,47 @@ class MedMindService:
             "اشرح",
             "شرح",
             "what is",
+            "what are",
+            "what do",
             "what does",
+            "why does",
             "explain",
             "meaning of",
+            "does this mean",
+            "what does that mean",
+            "is it",
+            "could",
+            "معناه ايه",
+            "معناها ايه",
+            "فايدته",
+            "فايدتها",
+            "وظيفته",
+            "وظيفتها",
+            "بتعمل ايه",
+            "بيعمل ايه",
+            "هل ده خطر",
+            "هل دا خطر",
+            "خطير",
+            "خطيرة",
+            "أقلق",
+            "مقلق",
+            "what does it do",
+            "what is its function",
+            "is that dangerous",
+            "latest",
+            "newest",
+            "recent research",
+            "guideline",
+            "guidelines",
+            "recommendation",
+            "recommendations",
+            "أحدث",
+            "احدث",
+            "آخر توصية",
+            "اخر توصية",
+            "توصيات",
+            "إرشادات",
+            "ارشادات",
         )
 
         medical_terms = (
@@ -5498,6 +5549,25 @@ class MedMindService:
             "صورة الدم",
             "هيموجلوبين",
             "hemoglobin",
+            "vitamin d",
+            "فيتامين د",
+            "25-oh",
+            "25(oh)d",
+            "ferritin",
+            "الفيريتين",
+            "iron",
+            "الحديد",
+            "tibc",
+            "transferrin",
+            "vitamin b12",
+            "فيتامين ب12",
+            "cobalamin",
+            "folate",
+            "folic acid",
+            "حمض الفوليك",
+            "الفولات",
+            "reticulocyte",
+            "الخلايا الشبكية",
             "hb",
             "anemia",
             "انيميا",
@@ -5514,6 +5584,38 @@ class MedMindService:
             "hypertension",
             "pneumonia",
             "التهاب رئوي",
+            "wbc",
+            "white blood cell",
+            "كرات الدم البيضاء",
+            "rbc",
+            "red blood cell",
+            "كرات الدم الحمراء",
+            "العدلات",
+            "neutrophil",
+            "lymphocytes",
+            "lymphocyte",
+            "الليمفاوية",
+            "monocytes",
+            "eosinophils",
+            "basophils",
+            "platelet",
+            "الصفائح",
+            "rdw",
+            "التحليل",
+            "النتيجة",
+            "fever",
+            "حمى",
+            "حرارة",
+            "cough",
+            "كحة",
+            "سعال",
+            "common cold",
+            "نزلة برد",
+            "برد",
+            "chest pain",
+            "ألم الصدر",
+            "shortness of breath",
+            "ضيق التنفس",
         )
 
         has_question_style = any(
@@ -5526,9 +5628,83 @@ class MedMindService:
             for term in medical_terms
         )
 
+        previous_assistant_text = " ".join(
+            str(item.content)
+            for item in (history or [])[-6:]
+            if getattr(item, "role", None) == "assistant"
+        ).lower()
+        has_recent_diagnostic_context = any(
+            term in previous_assistant_text
+            for term in (
+                "تقرير صورة الدم",
+                "تقرير التحاليل",
+                "القيم التالية خارج",
+                "حددت الصورة على إنها",
+                "identified this image",
+                "diagnostic",
+                "cbc",
+            )
+        )
+        has_follow_up_cue = any(
+            term in text
+            for term in (
+                "معناه",
+                "معناها",
+                "يعني",
+                "فايدته",
+                "فايدتها",
+                "وظيفة",
+                "دور",
+                "وظيفته",
+                "وظيفتها",
+                "بتعمل ايه",
+                "بيعمل ايه",
+                "خطر",
+                "خطير",
+                "خطيرة",
+                "أقلق",
+                "مقلق",
+                "اعمل ايه",
+                "أعمل ايه",
+                "سبب",
+                "يأثر",
+                "ممكن يكون",
+                "مرتبط",
+                "why",
+                "cause",
+                "could that",
+                "does this mean",
+                "what does that mean",
+                "what do",
+                "what are",
+                "is it",
+                "ممكن",
+                "هل دا",
+                "هل ده",
+                "latest",
+                "newest",
+                "recent research",
+                "أحدث",
+                "احدث",
+                "آخر توصية",
+                "اخر توصية",
+                "توصيات",
+                "إرشادات",
+                "ارشادات",
+                "what does it do",
+                "is that dangerous",
+            )
+        )
+
         return (
             has_question_style
-            and has_medical_term
+            and (
+                has_medical_term
+                or (
+                    has_recent_diagnostic_context
+                    and has_follow_up_cue
+                )
+            )
         )    
 
     # ========================================================
@@ -5541,6 +5717,7 @@ class MedMindService:
         session_id: str,
         message: str,
         channel: ConversationChannel,
+        diagnostic_mode: str | None = None,
         attachment_ids: list[str] | None = None,
         trusted_attachments: (
             list[TrustedDiagnosticAttachment]
@@ -5649,6 +5826,7 @@ class MedMindService:
         )
 
         direct_reply = None
+        direct_route = None
 
         selected_capability = None
 
@@ -5747,7 +5925,108 @@ class MedMindService:
                 trusted_time_fast_path = (
                     True
                 )
-        if greeting_reply is not None:
+        if diagnostic_mode == "auto_image":
+            nlu_result = NLUResult(
+                intent="unknown",
+                operation_type=None,
+                confirmation="unknown",
+                confidence=1.0,
+            )
+
+            if len(trusted_attachments) == 0:
+                direct_reply = (
+                    "ارفعي صورة واحدة علشان أقدر أحدد نوعها وأحللها."
+                    if language == "ar"
+                    else "Please upload one image so I can identify and analyze it."
+                )
+                direct_route = "diagnostics_image_attachment_required"
+                understanding_status = "diagnostic_image_attachment_required"
+
+            elif len(trusted_attachments) > 1:
+                direct_reply = (
+                    "ابعتي صورة واحدة في كل مرة علشان أحدد نوعها بدقة."
+                    if language == "ar"
+                    else "Please send one image at a time so I can identify it accurately."
+                )
+                direct_route = "diagnostics_image_single_attachment_required"
+                understanding_status = "diagnostic_image_multiple_attachments"
+
+            else:
+                allowed = getattr(
+                    self.understanding,
+                    "allowed_capabilities",
+                    None,
+                )
+                diagnostic_capabilities = {
+                    "diagnostics.pathology.analyze",
+                    "diagnostics.radiology.analyze",
+                }
+
+                if (
+                    allowed is not None
+                    and not diagnostic_capabilities.intersection(allowed)
+                ):
+                    direct_reply = (
+                        "الجهة الحالية غير مفعّل لها تحليل الصور الطبية. استخدمي Tenant ID لجهة مختبر أو مستشفى مفعّل لها التحليل."
+                        if language == "ar"
+                        else "Image analysis is not enabled for this provider. Use a lab or hospital tenant with diagnostics enabled."
+                    )
+                    direct_route = "diagnostics_image_not_enabled"
+                    understanding_status = "diagnostic_image_not_enabled"
+
+                elif self.diagnostic_agent_client is None:
+                    raise RuntimeError(
+                        "DiagnosticAgentClient is not configured."
+                    )
+
+                else:
+                    attachment = trusted_attachments[0]
+                    image_type = await self.diagnostic_agent_client.classify_image(
+                        image_bytes=attachment.data,
+                        filename=attachment.original_filename,
+                        content_type=attachment.content_type,
+                    )
+                    logger.info(
+                        "diagnostic_image_classified category=%s confidence=%.3f",
+                        image_type.category,
+                        image_type.confidence,
+                    )
+
+                    if image_type.confidence < 0.72:
+                        direct_reply = (
+                            "مش قادر أحدد نوع الصورة بثقة كافية. هل هي صورة تحليل، أشعة صدر، رنين للمخ، ولا مقطعية للكلى؟"
+                            if language == "ar"
+                            else "I couldn't identify the image confidently. Is it a lab report, chest X-ray, brain MRI, or kidney CT?"
+                        )
+                        direct_route = "diagnostics_image_clarification"
+                        understanding_status = "diagnostic_image_uncertain"
+
+                    elif image_type.category == "pathology":
+                        selected_capability = "diagnostics.pathology.analyze"
+                        selected_arguments = {}
+                        understanding_status = "diagnostic_image_auto_classified"
+
+                    elif image_type.category in {
+                        "chest_xray",
+                        "brain_mri",
+                        "kidney_ct",
+                    }:
+                        selected_capability = "diagnostics.radiology.analyze"
+                        selected_arguments = {
+                            "modality": image_type.category,
+                        }
+                        understanding_status = "diagnostic_image_auto_classified"
+
+                    else:
+                        direct_reply = (
+                            "الصورة مش من الأنواع المدعومة حاليًا. ارفعي تقرير تحليل أو أشعة صدر أو رنين للمخ أو مقطعية للكلى."
+                            if language == "ar"
+                            else "This image type isn't supported yet. Upload a lab report, chest X-ray, brain MRI, or kidney CT."
+                        )
+                        direct_route = "diagnostics_image_unsupported"
+                        understanding_status = "diagnostic_image_unsupported"
+
+        elif greeting_reply is not None:
 
             nlu_result = NLUResult(
                 intent="greeting",
@@ -6108,9 +6387,7 @@ class MedMindService:
                 direct_reply
             )
 
-            route = (
-                "understanding_clarification"
-            )
+            route = direct_route or "understanding_clarification"
 
             response_type = (
                 "clarification"
@@ -6254,6 +6531,14 @@ class MedMindService:
                 ),
             )
 
+            safety_result = (
+                self.diagnostic_safety_guard
+                .check_text(
+                    message=message,
+                    language=language,
+                )
+            )
+
             # ========================================================
             # DIAGNOSTIC SAFETY GUARD
             # ========================================================
@@ -6262,14 +6547,6 @@ class MedMindService:
                 selected_capability
                 in DIAGNOSTIC_CAPABILITIES
             ):
-
-                safety_result = (
-                    self.diagnostic_safety_guard
-                    .check_text(
-                        message=message,
-                        language=language,
-                    )
-                )
 
                 if safety_result.blocked:
 
@@ -6516,6 +6793,18 @@ class MedMindService:
                                 language=language,
                             )
                         )
+                        if diagnostic_mode == "auto_image":
+                            detected_type = {
+                                "chest_xray": "أشعة صدر",
+                                "brain_mri": "رنين مغناطيسي للمخ",
+                                "kidney_ct": "أشعة مقطعية على الكلى",
+                            }.get(modality, modality)
+                            detected_prefix = (
+                                f"حددت الصورة على إنها {detected_type}.\n\n"
+                                if language == "ar"
+                                else f"I identified this image as {modality.replace('_', ' ')}.\n\n"
+                            )
+                            reply = detected_prefix + reply
 
                         response_type = (
                             "diagnostic_radiology"
@@ -6673,6 +6962,13 @@ class MedMindService:
                                 language=language,
                             )
                         )
+                        if diagnostic_mode == "auto_image":
+                            detected_prefix = (
+                                "حددت الصورة على إنها تقرير تحاليل.\n\n"
+                                if language == "ar"
+                                else "I identified this image as a laboratory report.\n\n"
+                            )
+                            reply = detected_prefix + reply
                         response_type = (
                             "diagnostic_pathology"
                         )
@@ -6971,6 +7267,7 @@ class MedMindService:
                 and
                 self._looks_like_medical_education_question(
                     message=message,
+                    history=history,
                 )
             ):
 
@@ -6978,13 +7275,103 @@ class MedMindService:
                     time.perf_counter()
                 )
 
+                prior_diagnostic_context = "\n".join(
+                    str(item.content).strip()
+                    for item in (history or [])[-6:]
+                    if (
+                        getattr(item, "role", None) == "assistant"
+                        and any(
+                            marker in str(item.content).lower()
+                            for marker in (
+                                "تقرير صورة الدم",
+                                "تقرير التحاليل",
+                                "القيم التالية خارج",
+                                "حددت الصورة على إنها",
+                                "identified this image",
+                                "cbc",
+                            )
+                        )
+                    )
+                )[-1800:]
+                education_query = message
+                if prior_diagnostic_context:
+                    education_query += (
+                        "\n\nالسياق السابق في المحادثة: "
+                        + prior_diagnostic_context
+                    )
+
                 education_result = (
                     self.medical_education_agent
                     .answer(
-                        query=message,
+                        query=education_query,
                         language=language,
                     )
                 )
+
+                evidence_topic = (
+                    self.medical_evidence_retriever
+                    .topic_for(education_query)
+                )
+                freshness_requested = (
+                    self.medical_evidence_retriever
+                    .requests_recent_evidence(message)
+                )
+                guideline_requested = (
+                    self.medical_evidence_retriever
+                    .requests_guideline(message)
+                )
+                external_sources: list[ExternalMedicalSource] = []
+                if (
+                    evidence_topic
+                    and (
+                        education_result.status
+                        == MedicalEducationStatus.UNSUPPORTED
+                        or freshness_requested
+                    )
+                ):
+                    external_sources = await (
+                        self.medical_evidence_retriever
+                        .search(
+                            topic=evidence_topic,
+                            include_literature=freshness_requested,
+                            guidelines_only=guideline_requested,
+                        )
+                    )
+
+                sources_for_answer = external_sources
+                if guideline_requested:
+                    sources_for_answer = [
+                        source
+                        for source in external_sources
+                        if source.source_type
+                        == "PubMed-indexed guideline"
+                    ]
+                elif freshness_requested:
+                    sources_for_answer = [
+                        source
+                        for source in external_sources
+                        if source.source_type
+                        == "research article abstract"
+                    ]
+
+                education_contexts = list(
+                    education_result.context_used
+                )
+                education_source_names = [
+                    source.source_file
+                    for source in education_result.sources
+                ]
+                for source in sources_for_answer:
+                    education_contexts.append(
+                        f"Source: {source.publisher}. "
+                        f"Source type: {source.source_type}. "
+                        f"Title: {source.title}. "
+                        f"Published: {source.published or 'not specified'}.\n"
+                        f"Content: {source.summary}"
+                    )
+                    education_source_names.append(
+                        f"{source.publisher}: {source.title}"
+                    )
 
                 rag_ms = (
                     (
@@ -7005,7 +7392,11 @@ class MedMindService:
                         "verbalize_medical_education",
                     )
                     and
-                    education_result.context_used
+                    education_contexts
+                    and (
+                        not freshness_requested
+                        or sources_for_answer
+                    )
                 ):
 
                     verbalizer_started_at = (
@@ -7015,18 +7406,11 @@ class MedMindService:
                     llm_reply = await (
                         self.response_verbalizer
                         .verbalize_medical_education(
-                            question=message,
+                            question=education_query,
 
-                            contexts=(
-                                education_result
-                                .context_used
-                            ),
+                            contexts=education_contexts,
 
-                            source_names=[
-                                source.source_file
-                                for source
-                                in education_result.sources
-                            ],
+                            source_names=education_source_names,
 
                             language=language,
                         )
@@ -7040,11 +7424,57 @@ class MedMindService:
                         * 1000
                     )
 
-                reply = (
+                if llm_reply:
+                    reply = llm_reply
+                elif (
+                    sources_for_answer
+                    and education_result.status
+                    == MedicalEducationStatus.UNSUPPORTED
+                ):
+                    reply = (
+                        "لقيت مرجعًا طبيًا مناسبًا، لكن تعذّر تلخيصه بأمان الآن. "
+                        "راجعي الروابط في الأسفل."
+                        if language == "ar"
+                        else "I found relevant medical references, but could not summarize them safely right now. Please review the links below."
+                    )
+                else:
+                    reply = education_result.reply
+
+                if freshness_requested and not sources_for_answer:
+                    freshness_notice = (
+                        "\n\nماقدرتش أتحقق من مرجع حديث الآن؛ الإجابة أعلاه من المكتبة المحلية فقط."
+                        if language == "ar"
+                        else "\n\nI could not verify a current external reference; the answer above uses the local knowledge base only."
+                    )
+                    reply += freshness_notice
+
+                if sources_for_answer and (
                     llm_reply
-                    or
-                    education_result.reply
-                )
+                    or education_result.status
+                    == MedicalEducationStatus.UNSUPPORTED
+                ):
+                    source_heading = (
+                        "\n\nمراجع خارجية (للاطلاع):"
+                        if language == "ar"
+                        else "\n\nExternal references:"
+                    )
+                    source_heading += (
+                        f" — {self.medical_evidence_retriever.retrieved_date()}"
+                    )
+                    source_lines = []
+                    for source in sources_for_answer:
+                        publication_date = (
+                            f" — {source.published}"
+                            if source.published
+                            else ""
+                        )
+                        source_lines.append(
+                            f"• {source.title}{publication_date}\n"
+                            f"  {'Source type' if language == 'en' else 'نوع المصدر'}: {source.source_type}\n"
+                            f"  {source.publisher}\n"
+                            f"  {source.url}"
+                        )
+                    reply += source_heading + "\n" + "\n".join(source_lines)
 
                 route = (
                     "medical_education"

@@ -2,9 +2,11 @@
 
 import os
 import tempfile
+import json
 from pathlib import Path
 import logging
 from time import perf_counter
+from typing import Literal
 from dotenv import load_dotenv
 
 from fastapi import (
@@ -96,6 +98,7 @@ radiology_assessment_builder = (
 )
 
 pathology_pipeline: PathologyPipeline | None = None
+vision_provider: OpenAILabVisionProvider | None = None
 
 pathology_persistence_builder = (
     PathologyPersistenceContractBuilder()
@@ -107,14 +110,9 @@ def get_pathology_pipeline() -> PathologyPipeline:
     global pathology_pipeline
 
     if pathology_pipeline is None:
-
-        vision_provider = (
-            OpenAILabVisionProvider()
-        )
-
         extractor = (
             LabImageExtractor(
-                vision_provider
+                get_vision_provider()
             )
         )
 
@@ -125,6 +123,13 @@ def get_pathology_pipeline() -> PathologyPipeline:
         )
 
     return pathology_pipeline
+
+
+def get_vision_provider() -> OpenAILabVisionProvider:
+    global vision_provider
+    if vision_provider is None:
+        vision_provider = OpenAILabVisionProvider()
+    return vision_provider
 
 
 @app.on_event("startup")
@@ -278,6 +283,17 @@ class PathologyAnalyzeResponse(
         PathologyResultResponse
     ]
 
+
+class ImageTypeClassificationResponse(BaseModel):
+    category: Literal[
+        "pathology",
+        "chest_xray",
+        "brain_mri",
+        "kidney_ct",
+        "other",
+    ]
+    confidence: float = Field(ge=0.0, le=1.0)
+
 # ============================================================
 # HEALTH
 # ============================================================
@@ -297,6 +313,70 @@ async def health():
 # ============================================================
 # RADIOLOGY
 # ============================================================
+
+@app.post(
+    "/v1/classify-image",
+    response_model=ImageTypeClassificationResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def classify_image(
+    file: UploadFile = File(...),
+) -> ImageTypeClassificationResponse:
+    content_type = (file.content_type or "").strip().lower()
+    if content_type not in SUPPORTED_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail={
+                "code": "UNSUPPORTED_DIAGNOSTIC_FILE_TYPE",
+                "message": "Only JPEG and PNG images are supported.",
+            },
+        )
+
+    try:
+        image_bytes = await file.read(MAX_IMAGE_BYTES + 1)
+    finally:
+        await file.close()
+
+    if len(image_bytes) > MAX_IMAGE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail={
+                "code": "DIAGNOSTIC_FILE_TOO_LARGE",
+                "message": "The diagnostic image exceeds the allowed upload size.",
+            },
+        )
+    if not image_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "EMPTY_DIAGNOSTIC_FILE",
+                "message": "The uploaded diagnostic image is empty.",
+            },
+        )
+
+    try:
+        raw = await asyncio.to_thread(
+            get_vision_provider().classify_image,
+            image_bytes,
+            content_type,
+        )
+        cleaned = raw.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.strip("`").strip()
+            if cleaned.lower().startswith("json"):
+                cleaned = cleaned[4:].strip()
+        return ImageTypeClassificationResponse.model_validate(
+            json.loads(cleaned)
+        )
+    except Exception as exc:
+        logger.exception("diagnostic_image_classification_failed")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={
+                "code": "IMAGE_CLASSIFICATION_FAILED",
+                "message": "The image type could not be identified right now.",
+            },
+        ) from exc
 
 @app.post(
     "/v1/radiology/analyze",

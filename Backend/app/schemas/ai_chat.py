@@ -25,6 +25,10 @@ class AIChatRequest(BaseModel):
         "whatsapp",
     ] 
 
+    diagnostic_mode: Literal[
+        "auto_image",
+    ] | None = None
+
     attachment_ids: list[str] = Field(
         default_factory=list,
     )
