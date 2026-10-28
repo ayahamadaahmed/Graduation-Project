@@ -893,8 +893,14 @@ async def chat(
                     ),
 
                     document_type=(
-                        diagnostic_result.get(
-                            "document_type"
+                        (
+                            str(
+                                diagnostic_result.get(
+                                    "document_type"
+                                )
+                                or ""
+                            ).strip()[:50]
+                            or None
                         )
                     ),
 
