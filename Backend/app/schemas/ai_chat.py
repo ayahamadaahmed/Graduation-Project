@@ -6,6 +6,16 @@ from pydantic import (
 
 from typing import Literal
 
+class AIChatContextMessage(BaseModel):
+
+    role: Literal["user", "assistant"]
+
+    content: str = Field(
+        min_length=1,
+        max_length=5000,
+    )
+
+
 class AIChatRequest(BaseModel):
 
     session_id: str = Field(
@@ -32,6 +42,22 @@ class AIChatRequest(BaseModel):
     attachment_ids: list[str] = Field(
         default_factory=list,
     )
+
+    conversation_context: list[AIChatContextMessage] = Field(
+        default_factory=list,
+        max_length=24,
+    )
+
+    @field_validator("conversation_context")
+    @classmethod
+    def validate_conversation_context(
+        cls,
+        values: list[AIChatContextMessage],
+    ) -> list[AIChatContextMessage]:
+        total_chars = sum(len(item.content) for item in values)
+        if total_chars > 60000:
+            raise ValueError("conversation_context is too large.")
+        return values
 
     @field_validator(
         "session_id",

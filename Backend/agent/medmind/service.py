@@ -81,6 +81,9 @@ from medmind.language import (
 from medmind.memory.conversation import (
     ConversationMemory,
 )
+from medmind.memory.models import (
+    ChatMessage,
+)
 
 from medmind.rag_gateway import (
     answer_provider_knowledge,
@@ -5465,16 +5468,24 @@ class MedMindService:
             return False
 
         exclude_terms = (
-            "احجز",
-            "حجز",
+            "احجز موعد",
+            "احجزي موعد",
+            "عايز احجز",
+            "عايزة احجز",
+            "ممكن احجز",
+            "احجزلي",
+            "احجزيلي",
+            "حجزلي",
             "الغاء",
             "إلغاء",
             "غير ميعاد",
             "غيرلي",
             "reschedule",
             "cancel",
-            "book",
-            "appointment",
+            "book an appointment",
+            "schedule an appointment",
+            "cancel appointment",
+            "reschedule appointment",
             "analyze",
             "حلل",
             "اشعة",
@@ -5491,6 +5502,11 @@ class MedMindService:
 
         question_terms = (
             "يعني",
+            "ايه دخل",
+            "إيه دخل",
+            "مش فاهمة",
+            "مش فاهمه",
+            "مش فاهم",
             "وظيفة",
             "فايدة",
             "دور",
@@ -5630,7 +5646,7 @@ class MedMindService:
 
         previous_assistant_text = " ".join(
             str(item.content)
-            for item in (history or [])[-6:]
+            for item in (history or [])[-30:]
             if getattr(item, "role", None) == "assistant"
         ).lower()
         has_recent_diagnostic_context = any(
@@ -5693,6 +5709,28 @@ class MedMindService:
                 "ارشادات",
                 "what does it do",
                 "is that dangerous",
+                "عندي برد",
+                "عندى برد",
+                "وقت التحليل",
+                "وقت ما عملت",
+                "ساعة ما عملت",
+                "عملت التحليل",
+                "عملت التحاليل",
+                "عمري",
+                "عمرى",
+                "مش فاهمة",
+                "مش فاهمه",
+                "مش فاهم",
+                "مش فاهمه الموضوع",
+                "ايه دخل",
+                "إيه دخل",
+                "دكتور",
+                "طبيب",
+                "اروح لمين",
+                "أروح لمين",
+                "اختصاص",
+                "تخصص",
+                "متابعة",
             )
         )
 
@@ -5702,6 +5740,14 @@ class MedMindService:
                 cue in text
                 for cue in (
                     "كان عندي",
+                    "انا عندي",
+                    "أنا عندي",
+                    "عندي برد",
+                    "عندى برد",
+                    "وقت ما عملت",
+                    "ساعة ما عملت",
+                    "عمري",
+                    "عمرى",
                     "كنت عندي",
                     "كان عنده",
                     "كانت عندي",
@@ -5757,6 +5803,7 @@ class MedMindService:
         channel: ConversationChannel,
         diagnostic_mode: str | None = None,
         attachment_ids: list[str] | None = None,
+        conversation_context: list[dict[str, str]] | None = None,
         trusted_attachments: (
             list[TrustedDiagnosticAttachment]
             | None
@@ -5850,6 +5897,33 @@ class MedMindService:
                 session_id
             )
         )
+        session_history = await (
+            self.memory
+            .get_all(
+                session_id
+            )
+        )
+        client_context = [
+            item
+            for item in (conversation_context or [])
+            if (
+                item.get("role") in {"user", "assistant"}
+                and str(item.get("content") or "").strip()
+            )
+        ][-24:]
+        if client_context:
+            # The browser keeps the visible transcript for the lifetime of
+            # its tab. It can restore conversational context after Uvicorn's
+            # reload process clears the in-memory store. Treat it only as
+            # conversation context; workflow state and tool authorization
+            # still come from the server.
+            session_history = [
+                ChatMessage(
+                    role=item["role"],
+                    content=str(item["content"]).strip()[:5000],
+                )
+                for item in client_context
+            ]
 
         history_ms = (
             (
@@ -6298,7 +6372,7 @@ class MedMindService:
 
                             state=state,
 
-                            history=history,
+                history=session_history,
                         )
                     )
 
@@ -6336,6 +6410,33 @@ class MedMindService:
             )
             * 1000
         )
+
+        # A follow-up about a previously analyzed report is a conversation
+        # turn, not a request to run the image analyzer again. Diagnostic
+        # capabilities require a fresh attachment, so route these turns to
+        # the medical education path with the recent report in chat history.
+        if (
+            not trusted_attachments
+            and not (
+                state.stage.startswith("awaiting_")
+                and state.operation_type in ACTIVE_WRITE_OPERATIONS
+            )
+            and self._looks_like_medical_education_question(
+                message=message,
+                history=session_history,
+            )
+        ):
+            selected_capability = None
+            selected_arguments = {}
+            direct_reply = None
+            direct_route = None
+            nlu_result = NLUResult(
+                intent="unknown",
+                operation_type=None,
+                confirmation="unknown",
+                confidence=1.0,
+            )
+            understanding_status = "diagnostic_follow_up"
 
         # ----------------------------------------------------
         # Deterministic workflow selection
@@ -7305,7 +7406,7 @@ class MedMindService:
                 and
                 self._looks_like_medical_education_question(
                     message=message,
-                    history=history,
+                    history=session_history,
                 )
             ):
 
@@ -7315,7 +7416,7 @@ class MedMindService:
 
                 prior_diagnostic_context = "\n".join(
                     str(item.content).strip()
-                    for item in (history or [])[-6:]
+                    for item in (session_history or [])[-30:]
                     if (
                         getattr(item, "role", None) == "assistant"
                         and any(
@@ -7336,6 +7437,18 @@ class MedMindService:
                     education_query += (
                         "\n\nالسياق السابق في المحادثة: "
                         + prior_diagnostic_context
+                    )
+                recent_conversation_context = "\n".join(
+                    f"{getattr(item, 'role', 'unknown')}: "
+                    f"{str(getattr(item, 'content', '')).strip()}"
+                    for item in (session_history or [])[-24:]
+                    if str(getattr(item, "content", "")).strip()
+                )[-3500:]
+                if recent_conversation_context:
+                    education_query += (
+                        "\n\nالرسائل الأخيرة ذات الصلة من نفس الجلسة "
+                        "(للحفاظ على السياق فقط):\n"
+                        + recent_conversation_context
                     )
 
                 education_result = (

@@ -95,6 +95,12 @@ Rules:
     value or reference interval. Keep unclear values as null and identify the
     field in unreadable_fields. Preserve punctuation-free test names as
     written; the parser handles trailing punctuation.
+13. If the result cell visibly contains the numeric value 0, extract 0 as
+    printed; do not infer that it means "not measured". If the result cell is
+    blank, marked with a dash, or explicitly says not measured/not done, use
+    null instead. When a printed zero has no reference range and the report
+    does not explain its meaning, preserve the zero and leave that ambiguity
+    for the patient-facing explanation; do not label it normal or abnormal.
 """
 
 IMAGE_TYPE_CLASSIFICATION_PROMPT = """

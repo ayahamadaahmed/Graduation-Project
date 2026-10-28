@@ -655,6 +655,11 @@ async def chat(
             attachment_ids=
                 trusted_attachment_ids,
 
+            conversation_context=[
+                item.model_dump()
+                for item in payload.conversation_context
+            ],
+
             trusted_attachments=
                 trusted_attachments,
         )
