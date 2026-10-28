@@ -55,6 +55,8 @@ CBC_NAME_ALIASES = {
     # Differential
     "segmented %": "neutrophils_percent",
     "segmented%": "neutrophils_percent",
+    "segmented": "neutrophils_percent",
+    "segmented neutrophils": "neutrophils_percent",
     "neutrophil %": "neutrophils_percent",
     "neutrophils %": "neutrophils_percent",
     "neu%": "neutrophils_percent",
@@ -62,6 +64,7 @@ CBC_NAME_ALIASES = {
     "neutrophils": "neutrophils_percent",
 
     "absolute neutrophils": "neutrophils_absolute",
+    "absolute neutrophils count": "neutrophils_absolute",
     "absolute neutrophil": "neutrophils_absolute",
     "absolute neutrophil count": "neutrophils_absolute",
     "neutrophils absolute": "neutrophils_absolute",
@@ -70,6 +73,7 @@ CBC_NAME_ALIASES = {
     "lym%": "lymphocytes_percent",
     "lymphocytes%": "lymphocytes_percent",
     "lymphocytes %": "lymphocytes_percent",
+    "lymphocyte %": "lymphocytes_percent",
 
     "mon%": "monocytes_percent",
     "monocytes%": "monocytes_percent",
@@ -82,23 +86,34 @@ CBC_NAME_ALIASES = {
     "eosinophils%": "eosinophils_percent",
     "eosinophils %": "eosinophils_percent",
     "absolute eosinophils": "eosinophils_absolute",
+    "absolute eosinophills": "eosinophils_absolute",
+    "absolute eosinophills count": "eosinophils_absolute",
     "absolute eosinophil count": "eosinophils_absolute",
+    "eosinophills %": "eosinophils_percent",
     "eosinophils absolute": "eosinophils_absolute",
 
     "bas%": "basophils_percent",
     "basophils%": "basophils_percent",
     "basophils %": "basophils_percent",
+    "basophil %": "basophils_percent",
     "absolute basophils": "basophils_absolute",
     "absolute basophil count": "basophils_absolute",
     "basophils absolute": "basophils_absolute",
 
     "lym#": "lymphocytes_absolute",
     "absolute lymphocytes": "lymphocytes_absolute",
+    "absolute lymphocytes count": "lymphocytes_absolute",
     "absolute lymphocyte count": "lymphocytes_absolute",
     "lymphocytes absolute": "lymphocytes_absolute",
     "gra#": "granulocytes_absolute",
     "gran#": "granulocytes_absolute",
     "gram#": "granulocytes_absolute",
+
+    # Some laboratory reports label band/stab cells as Staff.
+    "staff %": "staff_percent",
+    "staff%": "staff_percent",
+    "stab %": "staff_percent",
+    "bands %": "staff_percent",
 
     # ESR
     "esr": "esr",
@@ -129,6 +144,7 @@ def normalize_test_name(
         .replace("_", " ")
     )
     cleaned = re.sub(r"\([^)]*\)", " ", cleaned)
+    cleaned = cleaned.strip(" :;,.\t\r\n")
 
     cleaned = " ".join(
         cleaned.split()

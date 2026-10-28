@@ -65,6 +65,7 @@ class SafeDiagnosticExplanationService:
         "eosinophils_absolute": "العدد المطلق للخلايا الحمضية",
         "basophils_percent": "نسبة الخلايا القاعدية، وهي نوع من كرات الدم البيضاء",
         "basophils_absolute": "العدد المطلق للخلايا القاعدية",
+        "staff_percent": "نسبة Staff كما وردت في التقرير",
         "esr": "سرعة ترسيب الدم",
         "vitamin_d_25oh": "فيتامين د (25-OH)",
         "vitamin_d2": "فيتامين د2",
@@ -412,17 +413,121 @@ class SafeDiagnosticExplanationService:
                 "لم تظهر قيم مقروءة خارج المجالات المرجعية المكتوبة في التقرير."
             )
 
-        if uncertain:
-            names = self._result_names(
-                uncertain
+        readable_without_reference = [
+            item
+            for item in uncertain
+            if item.get("value") is not None
+            and str(item.get("mapping_status") or "").lower() == "mapped"
+        ]
+        readable_unmapped = [
+            item
+            for item in uncertain
+            if item.get("value") is not None
+            and str(item.get("mapping_status") or "").lower() == "unmapped"
+        ]
+        unreadable = [
+            item
+            for item in uncertain
+            if item.get("value") is None
+            or str(item.get("mapping_status") or "").lower() == "unreadable"
+        ]
+
+        if is_cbc:
+            reassuring_names = {
+                "hemoglobin",
+                "rbc",
+                "hematocrit",
+                "platelets",
+                "lymphocytes_absolute",
+            }
+            reassuring = [
+                item
+                for item in results
+                if isinstance(item, dict)
+                and str(item.get("canonical_name") or "").lower()
+                in reassuring_names
+                and str(item.get("flag") or "").lower() == "normal"
+            ]
+            if reassuring:
+                parts.append(
+                    "ومن القيم المهمة اللي ظهرت داخل مرجع المعمل: "
+                    + "؛ ".join(
+                        self._render_lab_result(item=item, language="ar")
+                        for item in reassuring
+                    )
+                    + "."
+                )
+
+            differential_names = {
+                "neutrophils_percent",
+                "neutrophils_absolute",
+                "lymphocytes_percent",
+                "lymphocytes_absolute",
+                "monocytes_percent",
+                "monocytes_absolute",
+                "eosinophils_percent",
+                "eosinophils_absolute",
+                "basophils_percent",
+                "basophils_absolute",
+                "staff_percent",
+            }
+            if any(
+                isinstance(item, dict)
+                and str(item.get("canonical_name") or "").lower()
+                in differential_names
+                for item in results
+            ):
+                parts.append(
+                    "ملحوظة: النسبة المئوية لنوع من كرات الدم البيضاء هي حصته من الإجمالي، "
+                    "أما العدد المطلق فيوضح عدد هذا النوع في حجم الدم. الطبيب يفسرهما معًا؛ "
+                    "ارتفاع النسبة وحده لا يعني بالضرورة ارتفاع العدد الفعلي."
+                )
+
+        if readable_without_reference:
+            parts.append(
+                "في أرقام اتقرت، لكن التقرير ما أظهرش لها مجالًا مرجعيًا واضحًا، "
+                "فماينفعش أقول إنها طبيعية أو غير طبيعية من غير مرجع المعمل: "
+                + "؛ ".join(
+                    self._render_lab_result(item=item, language="ar")
+                    for item in readable_without_reference
+                )
+                + "."
             )
 
+        if readable_unmapped:
+            parts.append(
+                "وفي أرقام مقروءة لكن اسم الاختبار محتاج تأكيد قبل تفسيره: "
+                + "؛ ".join(
+                    self._render_lab_result(item=item, language="ar")
+                    for item in readable_unmapped
+                )
+                + "."
+            )
+
+        if unreadable:
+            names = self._result_names(unreadable)
             if names:
                 parts.append(
-                    "وفي نتائج مش قادر أقيّمها بثقة من الصورة: "
+                    "وفي أسماء أو أرقام مش واضحة كفاية في الصورة: "
                     + "، ".join(names)
                     + "."
                 )
+
+        has_low_white_cells = any(
+            isinstance(item, dict)
+            and str(item.get("canonical_name") or "").lower()
+            in {"wbc", "neutrophils_absolute"}
+            and str(item.get("flag") or "").lower() == "low"
+            for item in results
+        )
+        if is_cbc and has_low_white_cells:
+            parts.append(
+                "لأن عدد كرات الدم البيضاء أو العدلات أقل من مرجع التقرير، "
+                "فالسبب مايتحددش من CBC وحده. لو حابة نفهم السياق، قوليلي: هل فيه "
+                "حرارة أو عدوى حاليًا أو مؤخرًا؟ وهل فيه أدوية أو تحليل CBC أقدم للمقارنة؟ "
+                "العمر ومدة النتيجة مهمين للطبيب كمان. لو فيه حرارة أو إحساس شديد بالتوعك "
+                "مع انخفاض العدلات، تواصلي مع جهة طبية بسرعة لتقييم الحالة."
+            )
 
         if clean_unreadable:
             parts.append(

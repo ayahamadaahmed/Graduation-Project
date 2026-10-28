@@ -5696,15 +5696,53 @@ class MedMindService:
             )
         )
 
-        return (
-            has_question_style
-            and (
-                has_medical_term
-                or (
-                    has_recent_diagnostic_context
-                    and has_follow_up_cue
+        is_answering_diagnostic_context_question = (
+            has_recent_diagnostic_context
+            and any(
+                cue in text
+                for cue in (
+                    "كان عندي",
+                    "كنت عندي",
+                    "كان عنده",
+                    "كانت عندي",
+                    "اخدت",
+                    "أخدت",
+                    "باخد",
+                    "بتناول",
+                    "باستخدم",
+                    "عندي حرارة",
+                    "حرارتي",
+                    "سخونية",
+                    "دور برد",
+                    "نزلة برد",
+                    "عدوى",
+                    "مفيش حرارة",
+                    "معنديش حرارة",
+                    "ايوه",
+                    "أيوه",
+                    "لا،",
+                    "لا ",
+                    "yes,",
+                    "no,",
+                    "i had",
+                    "i was taking",
+                    "i take",
                 )
             )
+        )
+
+        return (
+            (
+                has_question_style
+                and (
+                    has_medical_term
+                    or (
+                        has_recent_diagnostic_context
+                        and has_follow_up_cue
+                    )
+                )
+            )
+            or is_answering_diagnostic_context_question
         )    
 
     # ========================================================

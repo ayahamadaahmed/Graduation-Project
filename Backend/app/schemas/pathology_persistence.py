@@ -23,6 +23,7 @@ class PathologyResultPersistenceItem(
         "renal",
         "liver",
         "lipid",
+        "additional_labs",
     ] | None = None
 
     raw_name: str = Field(

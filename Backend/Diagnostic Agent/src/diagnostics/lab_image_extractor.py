@@ -86,6 +86,15 @@ Rules:
    present. Preserve each printed name, value, unit, and reference range.
 10. Set document_type to a short description of the report or panel(s) visible;
     do not label every laboratory report as CBC.
+11. For CBC reports, extract every legible line separately, including RBC
+    indices, platelet count, total WBC/TLC, differential percentages, and
+    absolute cell counts (ANC/absolute neutrophils, lymphocytes, monocytes,
+    eosinophils, and basophils). Do not omit a line because its reference
+    range is shown as '-' or is missing.
+12. Never calculate an absolute count from a percentage, or infer a missing
+    value or reference interval. Keep unclear values as null and identify the
+    field in unreadable_fields. Preserve punctuation-free test names as
+    written; the parser handles trailing punctuation.
 """
 
 IMAGE_TYPE_CLASSIFICATION_PROMPT = """
