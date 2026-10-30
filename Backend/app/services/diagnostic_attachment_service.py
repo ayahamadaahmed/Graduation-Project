@@ -22,6 +22,7 @@ _ALLOWED_CONTENT_TYPES = frozenset(
     {
         "image/jpeg",
         "image/png",
+        "application/pdf",
     }
 )
 
@@ -166,7 +167,7 @@ class DiagnosticAttachmentService:
             not in _ALLOWED_CONTENT_TYPES
         ):
             raise UnsupportedDiagnosticFileTypeError(
-                "Only JPEG and PNG diagnostic images "
+                "Only JPEG, PNG, and PDF diagnostic files "
                 "are currently supported."
             )
 
@@ -174,16 +175,11 @@ class DiagnosticAttachmentService:
         # Verify real content type.
         # ----------------------------------------------------
 
-        detected_content_type = (
-            self._detect_image_content_type(
-                data
-            )
-        )
+        detected_content_type = self._detect_content_type(data)
 
         if detected_content_type is None:
             raise UnsupportedDiagnosticFileTypeError(
-                "Uploaded content is not a supported "
-                "JPEG or PNG image."
+                "Uploaded content is not a supported JPEG, PNG, or PDF file."
             )
 
         if (
@@ -199,11 +195,11 @@ class DiagnosticAttachmentService:
         # Canonical extension
         # ----------------------------------------------------
 
-        if detected_content_type == "image/jpeg":
-            extension = ".jpg"
-
-        else:
-            extension = ".png"
+        extension = {
+            "image/jpeg": ".jpg",
+            "image/png": ".png",
+            "application/pdf": ".pdf",
+        }[detected_content_type]
 
         # ----------------------------------------------------
         # Attachment identity
@@ -481,6 +477,15 @@ class DiagnosticAttachmentService:
         ):
             return "image/jpeg"
 
+        return None
+
+    @staticmethod
+    def _detect_content_type(data: bytes) -> str | None:
+        image_type = DiagnosticAttachmentService._detect_image_content_type(data)
+        if image_type:
+            return image_type
+        if data.startswith(b"%PDF-"):
+            return "application/pdf"
         return None
 
     # ========================================================

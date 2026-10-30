@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
@@ -41,6 +41,12 @@ class ChestXrayResult:
         "AI model classification for educational and decision-support use only.",
         "The result is not a clinical diagnosis.",
         "Model performance may vary across image sources and patient populations.",
+        "This model is trained to detect Pneumonia vs. Normal only. "
+        "Other chest pathologies — including pulmonary infarction, pulmonary embolism, "
+        "pulmonary edema, pleural effusion, atelectasis, and malignancy — "
+        "are not part of this model's training and may incorrectly appear as 'Normal'.",
+        "A 'Normal' result does not exclude other chest diseases. "
+        "Clinical correlation and review by a qualified radiologist are required.",
     )
 
     def __post_init__(self) -> None:

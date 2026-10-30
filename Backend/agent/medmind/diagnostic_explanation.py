@@ -205,6 +205,19 @@ class SafeDiagnosticExplanationService:
                     "by a qualified clinician."
                 )
 
+            # Warning for chest xray normal result — model only knows Pneumonia vs Normal
+            if (
+                modality == "chest_xray"
+                and classification.lower() == "normal"
+            ):
+                reply += (
+                    "\n\n⚠️ **Important:** This model is trained to detect Pneumonia vs. Normal only. "
+                    "A 'Normal' result means the model did not detect signs of pneumonia — "
+                    "it does NOT rule out other chest conditions such as pulmonary infarction, "
+                    "pulmonary embolism, pulmonary edema, atelectasis, pleural effusion, or malignancy. "
+                    "A qualified radiologist must review the image."
+                )
+
             if clean_limitations:
                 reply += (
                     " Model limitations: "
@@ -275,6 +288,16 @@ class SafeDiagnosticExplanationService:
                 "الدكتور لازم يراجع الصورة مع الأعراض "
                 "والتاريخ المرضي قبل أي قرار."
             )
+
+            # Warning for chest xray normal result — model only knows Pneumonia vs Normal
+            if modality == "chest_xray" and classification.lower() == "normal":
+                reply += (
+                    "\n\n⚠️ **تنبيه مهم:** الموديل ده متخصص في كشف الالتهاب الرئوي (Pneumonia) فقط، "
+                    "مقارنةً بالصورة الطبيعية. نتيجة 'طبيعي' تعني إن الموديل مش شايف علامات التهاب رئوي — "
+                    "لكنها مش دليل على غياب أمراض تانية زي: "
+                    "احتشاء رئوي، انسداد رئوي، وذمة رئوية، انخماص رئوي، أو ورم. "
+                    "لازم طبيب متخصص يراجع الصورة للتأكيد."
+                )
 
         elif classification:
 

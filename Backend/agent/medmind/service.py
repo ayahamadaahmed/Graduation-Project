@@ -144,6 +144,9 @@ from medmind.workflows.reschedule import (
 from medmind.diagnostic_attachment import (
     TrustedDiagnosticAttachment,
 )
+from medmind.diagnostic_documents import (
+    prepare_diagnostic_pages,
+)
 
 # ============================================================
 # LOGGER
@@ -5840,6 +5843,7 @@ class MedMindService:
             trusted_attachments
             or []
         )
+        diagnostic_pages = []
         # ----------------------------------------------------
         # State
         # ----------------------------------------------------
@@ -6058,23 +6062,39 @@ class MedMindService:
 
             if len(trusted_attachments) == 0:
                 direct_reply = (
-                    "ارفعي صورة واحدة علشان أقدر أحدد نوعها وأحللها."
+                    "ارفعي صورة أو ملف PDF علشان أقدر أحدد نوعه وأحلله."
                     if language == "ar"
-                    else "Please upload one image so I can identify and analyze it."
+                    else "Please upload one JPG, PNG, or PDF attachment so I can identify and analyze it."
                 )
                 direct_route = "diagnostics_image_attachment_required"
                 understanding_status = "diagnostic_image_attachment_required"
 
             elif len(trusted_attachments) > 1:
                 direct_reply = (
-                    "ابعتي صورة واحدة في كل مرة علشان أحدد نوعها بدقة."
+                    "ابعتي مرفقًا واحدًا في كل مرة علشان أقدر أقرأه بدقة."
                     if language == "ar"
-                    else "Please send one image at a time so I can identify it accurately."
+                    else "Please send one attachment at a time so I can read it accurately."
                 )
                 direct_route = "diagnostics_image_single_attachment_required"
                 understanding_status = "diagnostic_image_multiple_attachments"
 
             else:
+                attachment = trusted_attachments[0]
+                try:
+                    diagnostic_pages = prepare_diagnostic_pages(
+                        data=attachment.data,
+                        filename=attachment.original_filename,
+                        content_type=attachment.content_type,
+                    )
+                except ValueError as exc:
+                    direct_reply = (
+                        f"مش قادر أقرأ الملف: {exc}"
+                        if language == "ar"
+                        else f"I couldn't read that file: {exc}"
+                    )
+                    direct_route = "diagnostics_document_invalid"
+                    understanding_status = "diagnostic_document_invalid"
+
                 allowed = getattr(
                     self.understanding,
                     "allowed_capabilities",
@@ -6085,7 +6105,10 @@ class MedMindService:
                     "diagnostics.radiology.analyze",
                 }
 
-                if (
+                if direct_reply is not None:
+                    pass
+
+                elif (
                     allowed is not None
                     and not diagnostic_capabilities.intersection(allowed)
                 ):
@@ -6103,11 +6126,11 @@ class MedMindService:
                     )
 
                 else:
-                    attachment = trusted_attachments[0]
+                    first_page = diagnostic_pages[0]
                     image_type = await self.diagnostic_agent_client.classify_image(
-                        image_bytes=attachment.data,
-                        filename=attachment.original_filename,
-                        content_type=attachment.content_type,
+                        image_bytes=first_page.data,
+                        filename=first_page.filename,
+                        content_type=first_page.content_type,
                     )
                     logger.info(
                         "diagnostic_image_classified category=%s confidence=%.3f",
@@ -6123,6 +6146,22 @@ class MedMindService:
                         )
                         direct_route = "diagnostics_image_clarification"
                         understanding_status = "diagnostic_image_uncertain"
+
+                    elif (
+                        attachment.content_type == "application/pdf"
+                        and image_type.category in {
+                            "chest_xray",
+                            "brain_mri",
+                            "kidney_ct",
+                        }
+                    ):
+                        direct_reply = (
+                            "ملفات PDF المدعومة حاليًا هي تقارير التحاليل. لأشعة الصدر أو الرنين أو المقطعية، ارفعي صورة JPG أو PNG للفحص المطلوب."
+                            if language == "ar"
+                            else "PDF support currently covers laboratory reports. For a chest X-ray, MRI, or CT, upload the specific study image as JPG or PNG."
+                        )
+                        direct_route = "diagnostics_pdf_radiology_unsupported"
+                        understanding_status = "diagnostic_pdf_radiology_unsupported"
 
                     elif image_type.category == "pathology":
                         selected_capability = "diagnostics.pathology.analyze"
@@ -6869,19 +6908,24 @@ class MedMindService:
                             trusted_attachments[0]
                         )
 
+                        if not diagnostic_pages:
+                            diagnostic_pages = prepare_diagnostic_pages(
+                                data=attachment.data,
+                                filename=attachment.original_filename,
+                                content_type=attachment.content_type,
+                            )
+
                         radiology_result = await (
                             self.diagnostic_agent_client
                             .analyze_radiology(
                                 image_bytes=(
-                                    attachment.data
+                                    diagnostic_pages[0].data
                                 ),
                                 filename=(
-                                    attachment
-                                    .original_filename
+                                    diagnostic_pages[0].filename
                                 ),
                                 content_type=(
-                                    attachment
-                                    .content_type
+                                    diagnostic_pages[0].content_type
                                 ),
                                 modality=modality,
                             )
@@ -7057,22 +7101,37 @@ class MedMindService:
                             trusted_attachments[0]
                         )
 
-                        pathology_result = await (
-                            self.diagnostic_agent_client
-                            .analyze_pathology(
-                                image_bytes=(
-                                    attachment.data
-                                ),
-                                filename=(
-                                    attachment
-                                    .original_filename
-                                ),
-                                content_type=(
-                                    attachment
-                                    .content_type
-                                ),
+                        if not diagnostic_pages:
+                            diagnostic_pages = prepare_diagnostic_pages(
+                                data=attachment.data,
+                                filename=attachment.original_filename,
+                                content_type=attachment.content_type,
                             )
-                        )
+
+                        page_results = []
+                        for page in diagnostic_pages:
+                            page_results.append(
+                                await self.diagnostic_agent_client.analyze_pathology(
+                                    image_bytes=page.data,
+                                    filename=page.filename,
+                                    content_type=page.content_type,
+                                )
+                            )
+
+                        pathology_result = page_results[0]
+                        combined_results = []
+                        combined_unreadable = []
+                        document_types = []
+                        for page_number, page_result in enumerate(page_results, start=1):
+                            if page_result.document_type and page_result.document_type not in document_types:
+                                document_types.append(page_result.document_type)
+                            combined_unreadable.extend(page_result.unreadable_fields)
+                            for item in page_result.results:
+                                result_item = item.model_dump(mode="json")
+                                result_item["result_index"] = len(combined_results)
+                                if len(page_results) > 1:
+                                    result_item["page_number"] = page_number
+                                combined_results.append(result_item)
 
                         diagnostic_result = {
                             "kind":
@@ -7087,22 +7146,15 @@ class MedMindService:
                                 .attachment_id,
 
                             "document_type":
-                                pathology_result
-                                .document_type,
+                                ", ".join(document_types)
+                                or pathology_result.document_type,
 
                             "unreadable_fields":
-                                list(
-                                    pathology_result
-                                    .unreadable_fields
-                                ),
+                                list(dict.fromkeys(combined_unreadable)),
 
-                            "results": [
-                                item.model_dump(
-                                    mode="json"
-                                )
-                                for item
-                                in pathology_result.results
-                            ],
+                            "results": combined_results,
+
+                            "page_count": len(page_results),
                         }
 
                         # Do not expose medical interpretation yet.
@@ -7116,10 +7168,18 @@ class MedMindService:
                             )
                         )
                         if diagnostic_mode == "auto_image":
+                            is_pdf = attachment.content_type == "application/pdf"
+                            detected_report = (
+                                "ملف PDF" if is_pdf else "الصورة"
+                            )
                             detected_prefix = (
-                                "حددت الصورة على إنها تقرير تحاليل.\n\n"
+                                f"حددت {detected_report} على إنه تقرير تحاليل.\n\n"
                                 if language == "ar"
-                                else "I identified this image as a laboratory report.\n\n"
+                                else (
+                                    "I identified this PDF as a laboratory report.\n\n"
+                                    if is_pdf
+                                    else "I identified this image as a laboratory report.\n\n"
+                                )
                             )
                             reply = detected_prefix + reply
                         response_type = (

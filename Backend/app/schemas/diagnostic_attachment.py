@@ -18,6 +18,7 @@ class DiagnosticAttachmentUploadResponse(
     content_type: Literal[
         "image/jpeg",
         "image/png",
+        "application/pdf",
     ]
 
     size_bytes: int = Field(

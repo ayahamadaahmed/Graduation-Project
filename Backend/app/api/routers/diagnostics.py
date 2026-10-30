@@ -235,7 +235,7 @@ async def upload_diagnostic_attachment(
 
                 "message":
                     (
-                        "The diagnostic image exceeds "
+                        "The diagnostic attachment exceeds "
                         "the allowed upload size."
                     ),
             },
@@ -279,7 +279,7 @@ async def upload_diagnostic_attachment(
 
                 "message":
                     (
-                        "The diagnostic image exceeds "
+                        "The diagnostic attachment exceeds "
                         "the allowed upload size."
                     ),
             },
@@ -297,8 +297,8 @@ async def upload_diagnostic_attachment(
 
                 "message":
                     (
-                        "Only JPEG and PNG diagnostic "
-                        "images are currently supported."
+                        "Only JPG, PNG, and PDF diagnostic "
+                        "attachments are supported."
                     ),
             },
         ) from exc
