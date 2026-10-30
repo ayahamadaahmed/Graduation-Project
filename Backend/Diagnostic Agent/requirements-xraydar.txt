@@ -1,0 +1,4 @@
+# Optional local X-Raydar runtime. Install in the Diagnostic Agent environment.
+torch>=2.2,<3.0
+numpy>=1.24
+Pillow>=9.0

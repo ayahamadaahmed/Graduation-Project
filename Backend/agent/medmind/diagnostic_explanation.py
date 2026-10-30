@@ -83,6 +83,14 @@ class SafeDiagnosticExplanationService:
     _CLASSIFICATION_LABELS_AR = {
         "normal": "طبيعي",
         "pneumonia": "اشتباه التهاب رئوي",
+        "consolidation": "تكثّف في جزء من نسيج الرئة",
+        "atelectasis": "انخماص جزء من الرئة",
+        "pleural_effusion": "تجمع سائل حول الرئة",
+        "cardiomegaly": "تضخم ظل القلب في الصورة",
+        "ground_glass_opacification": "عتامات زجاجية في نسيج الرئة",
+        "interstitial_shadowing": "عتامات في النسيج الخلالي للرئة",
+        "pneumothorax": "هواء حول الرئة",
+        "emphysema": "علامة قد ترتبط بانتفاخ الرئة",
         "pituitary": "فئة الغدة النخامية",
         "glioma": "فئة glioma",
         "meningioma": "فئة meningioma",
@@ -137,6 +145,8 @@ class SafeDiagnosticExplanationService:
         ).strip()
 
         confidence = result.get("confidence")
+        score_semantics = str(result.get("score_semantics") or "class_probability")
+        is_multilabel_score = score_semantics.startswith("independent_multilabel")
 
         limitations = result.get("limitations")
 
@@ -158,7 +168,15 @@ class SafeDiagnosticExplanationService:
                 )
             )
 
-            if classification and confidence is not None:
+            if classification and confidence is not None and is_multilabel_score:
+                reply = (
+                    f"For this {modality_label}, the model's highest finding score was "
+                    f"'{classification}' ({confidence * 100:.1f}%). This is an independent "
+                    "model score, not diagnostic confidence or a calibrated disease probability. "
+                    "It does not confirm a disease and requires review by a qualified radiologist."
+                )
+
+            elif classification and confidence is not None:
                 reply = (
                     f"For this {modality_label}, "
                     f"the AI model's screening output was "
@@ -216,7 +234,18 @@ class SafeDiagnosticExplanationService:
             )
         )
 
-        if classification and confidence is not None:
+        if classification and confidence is not None and is_multilabel_score:
+
+            score_text = self._format_confidence_percent(confidence) or str(confidence)
+            classification_text = self._classification_label_ar(classification)
+            reply = (
+                f"بص، النموذج سجّل علامة {classification_text} في أشعة الصدر "
+                f"بدرجة {score_text}. دي درجة مستقلة للعلامة حسب النموذج، "
+                "وليست ثقة تشخيصية أو احتمالًا طبيًا معايرًا، ولا تثبت وجود مرض. "
+                "لازم طبيب أشعة يراجع الصورة والتقرير والأعراض."
+            )
+
+        elif classification and confidence is not None:
 
             confidence_text = (
                 self._format_confidence_percent(

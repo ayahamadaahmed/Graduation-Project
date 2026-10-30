@@ -89,9 +89,31 @@ SUPPORTED_CONTENT_TYPES = {
 # Do not construct them per request.
 # ============================================================
 
-radiology_processor = (
-    RadiologyProcessor()
-)
+def _build_radiology_processor() -> RadiologyProcessor:
+    chest_model_name = os.getenv("DIAGNOSTIC_CHEST_XRAY_MODEL", "xraydar").strip().lower()
+    if chest_model_name == "xraydar":
+        try:
+            from src.diagnostics.radiology.xraydar_model import XRaydarChestXrayModel
+        except ImportError as exc:
+            if exc.name == "torch":
+                raise RuntimeError(
+                    "X-Raydar is enabled but PyTorch is missing from this Python environment. "
+                    "Install the Diagnostic Agent optional requirements or set "
+                    "DIAGNOSTIC_CHEST_XRAY_MODEL=mediscan to use the existing model."
+                ) from exc
+            raise
+        chest_model = XRaydarChestXrayModel(
+            model_dir=os.getenv("DIAGNOSTIC_XRAYDAR_MODEL_DIR")
+        )
+    elif chest_model_name in {"mediscan", "legacy"}:
+        from src.diagnostics.radiology.chest_xray_model import ChestXrayModel
+        chest_model = ChestXrayModel()
+    else:
+        raise RuntimeError("DIAGNOSTIC_CHEST_XRAY_MODEL must be 'xraydar' or 'mediscan'.")
+    return RadiologyProcessor(chest_xray_model=chest_model)
+
+
+radiology_processor = _build_radiology_processor()
 
 radiology_assessment_builder = (
     RadiologyAssessmentBuilder()
@@ -238,6 +260,8 @@ class RadiologyAnalyzeResponse(
     model_version: str
 
     limitations: list[str]
+
+    score_semantics: str = "class_probability"
 
 
 class PathologyResultResponse(
@@ -621,6 +645,11 @@ async def analyze_radiology(
 
         limitations=list(
             assessment.limitations
+        ),
+        score_semantics=(
+            "independent_multilabel_scores_not_calibrated_probabilities"
+            if assessment.model_name == "xraydar-multiscale"
+            else "class_probability"
         ),
     )
 

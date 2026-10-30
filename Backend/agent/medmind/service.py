@@ -5659,6 +5659,17 @@ class MedMindService:
                 "identified this image",
                 "diagnostic",
                 "cbc",
+                "قراءة مبدئية من ai",
+                "درجة مستقلة",
+                "درجة النموذج",
+                "الموديل حلل",
+                "الموديل حلّل",
+                "أشعة الصدر",
+                "chest x-ray",
+                "screening output",
+                "consolidation",
+                "pleural_effusion",
+                "atelectasis",
             )
         )
         has_follow_up_cue = any(
@@ -6901,6 +6912,9 @@ class MedMindService:
                             "confidence":
                                 radiology_result.confidence,
 
+                            "score_semantics":
+                                radiology_result.score_semantics,
+
                             "inference_latency_ms":
                                 radiology_result.inference_latency_ms,
 
@@ -7428,6 +7442,17 @@ class MedMindService:
                                 "حددت الصورة على إنها",
                                 "identified this image",
                                 "cbc",
+                                "قراءة مبدئية من ai",
+                                "درجة مستقلة",
+                                "درجة النموذج",
+                                "الموديل حلل",
+                                "الموديل حلّل",
+                                "أشعة الصدر",
+                                "chest x-ray",
+                                "screening output",
+                                "consolidation",
+                                "pleural_effusion",
+                                "atelectasis",
                             )
                         )
                     )

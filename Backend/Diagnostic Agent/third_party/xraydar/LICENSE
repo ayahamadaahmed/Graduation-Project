@@ -1,0 +1,31 @@
+Warwick X-Raydar © 2023, The University of Warwick (the "Software")
+
+Definition of Software. For the purposes of this License, "Software" refers to several distinct components:
+
+a. The X-Raydar portal, which provides access to real-time evaluation of DICOM files
+
+b. The programmable Application Programming Interfaces (APIs) for X-Raydar and X-Raydar-NLP
+
+c. The neural network weights and code implementing X-Raydar and X-Raydar-NLP functionalities
+
+These components are collectively referred to as "Software" throughout this agreement.
+
+Ownership and Property Rights. The Software remains the property of the University of Warwick ("the University").
+
+Distribution and Purpose of the License. The Software is distributed "AS IS" under this License solely for academic research and non-clinical, non-commercial evaluation. The University, as a charitable foundation, aims to protect its assets for educational and research purposes and therefore makes no warranty as to the Software's accuracy or suitability for any particular purpose or use under specific conditions.
+
+Disclaimer and Responsibility. The University disclaims all responsibility for the use made of the Software and any outcomes arising from such use. It further disclaims any liability for the outcomes arising from using the Software.
+
+Liability and Indemnification. The Licensee agrees to indemnify the University and hold it harmless from and against any and all claims, damages, and liabilities asserted by third parties (including claims for negligence) which arise directly or indirectly from the use of the Software.
+
+Prohibition of Commercial and Clinical Use. Commercial or clinical use of the Software is strictly prohibited. "Commercial use" is defined as any use that results in financial return, including integration into products for sale, research towards developing products for sale, or providing services to external organizations for payment. If you are interested in using the Software commercially, please contact Warwick Ventures, the technology transfer company of the University, to negotiate a license. In cases where academic researchers would like to collaborate with commercial entities for research purposes, the academic partner should contact Warwick Ventures to establish an agreement allowing such collaborative use under this License. This will ensure clarity on intellectual property and publication rights.
+
+Redistribution restrictions. Redistribution of the original or modified software is permitted solely for academic research or non-commercial, non-clinical evaluation under the following conditions:
+
+a. Redistributions must include this full license document verbatim without modification.
+
+b. All redistributions must also conspicuously include the following copyright notice: “This software includes Warwick X-Raydar code © 2023, The University of Warwick”
+
+c. Original or modified redistributed versions should retain existing copyright notices and cannot be sublicensed or conveyed under any other license terms.
+
+Commercial reproduction, distribution, sublicense or transfer remains strictly prohibited without express written permission from the University. Contact Details For queries or clarifications regarding permissible use, contact Warwick Ventures (ventures@warwick.ac.uk)

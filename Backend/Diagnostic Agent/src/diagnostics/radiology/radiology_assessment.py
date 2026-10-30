@@ -82,7 +82,7 @@ class RadiologyAssessmentBuilder:
             modality=processing.modality,
 
             classification=(
-                model_result.classification.value
+                getattr(model_result.classification, "value", model_result.classification)
             ),
 
             probabilities=dict(

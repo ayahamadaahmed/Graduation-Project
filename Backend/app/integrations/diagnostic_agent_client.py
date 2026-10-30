@@ -46,6 +46,8 @@ class RadiologyAgentResponse(
 
     limitations: list[str]
 
+    score_semantics: str = "class_probability"
+
 class PathologyResultResponse(
     BaseModel
 ):

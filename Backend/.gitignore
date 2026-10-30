@@ -69,6 +69,8 @@ artifacts/
 # Include trained Diagnostic Agent models
 !Diagnostic Agent/models/
 !Diagnostic Agent/models/**
+Diagnostic Agent/models/xraydar/**/model_best.pth.tar
+!Diagnostic Agent/models/xraydar/README.md
 !app/models/
 !app/models/**
 app/models/__pycache__/
