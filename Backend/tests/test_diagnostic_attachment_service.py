@@ -101,6 +101,16 @@ class FakeRepository:
 
         return self.lookup_result
 
+    def get_by_sha256(
+        self,
+        *,
+        provider_id,
+        patient_id,
+        session_id,
+        sha256,
+    ):
+        return self.lookup_result
+
 
 def make_service(
     tmp_path: Path,
@@ -194,6 +204,27 @@ def test_store_creates_file_and_db_record(
         stored_path.read_bytes()
         == JPEG_BYTES
     )
+
+
+def test_identical_upload_in_same_scope_reuses_existing_record(tmp_path):
+    existing = SimpleNamespace(attachment_id="existing-attachment")
+    repository = FakeRepository()
+    repository.lookup_result = existing
+    service, repository = make_service(tmp_path, repository=repository)
+
+    result = service.store(
+        provider_id=uuid4(),
+        patient_id=None,
+        session_id="session-1",
+        original_filename="copy.jpg",
+        content_type="image/jpeg",
+        data=JPEG_BYTES,
+    )
+
+    assert result is existing
+    assert repository.created_kwargs is None
+    assert repository.session.commit_count == 0
+    assert list(tmp_path.rglob("*.jpg")) == []
 
 
 def test_db_failure_removes_stored_file(
@@ -346,9 +377,9 @@ def test_rejects_unsupported_file(
         service.store(
             provider_id=uuid4(),
             session_id="session-1",
-            original_filename="report.pdf",
-            content_type="application/pdf",
-            data=b"%PDF-test",
+            original_filename="image.gif",
+            content_type="image/gif",
+            data=b"GIF89a\x00\x00\x01\x00\x01\x00",
         )
 
     assert (

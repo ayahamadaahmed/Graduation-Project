@@ -75,6 +75,9 @@ from app.models.radiology_report import (
 from app.models.diagnostic_assessment import (
     DiagnosticAssessment,
 )
+from app.models.diagnostic_case import (
+    DiagnosticCase,
+)
 
 from app.models.patient_condition import (
     PatientCondition,
@@ -124,6 +127,7 @@ __all__ = [
     "LabResult",
     "RadiologyReport",
     "DiagnosticAssessment",
+    "DiagnosticCase",
     "PatientCondition",
     "PatientAllergy",
     "PatientMedication",

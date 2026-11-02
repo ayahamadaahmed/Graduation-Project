@@ -248,6 +248,15 @@ class DiagnosticAttachmentService:
             data
         ).hexdigest()
 
+        existing = self.repository.get_by_sha256(
+            provider_id=provider_id,
+            patient_id=patient_id,
+            session_id=session_id,
+            sha256=digest,
+        )
+        if existing is not None:
+            return existing
+
         # ----------------------------------------------------
         # 1. Store file first.
         # ----------------------------------------------------

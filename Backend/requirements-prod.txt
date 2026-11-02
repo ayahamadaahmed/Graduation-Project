@@ -2,6 +2,7 @@
 uvicorn[standard]==0.51.0
 
 sqlalchemy==2.0.51
+alembic==1.18.5
 pyodbc==5.3.0
 
 pydantic==2.13.4

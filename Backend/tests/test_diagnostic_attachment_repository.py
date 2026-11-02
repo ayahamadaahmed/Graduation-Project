@@ -16,6 +16,7 @@ class FakeSession:
         self.deleted = []
         self.flush_count = 0
         self.scalar_result = None
+        self.last_statement = None
 
     def add(
         self,
@@ -42,6 +43,7 @@ class FakeSession:
         self,
         statement,
     ):
+        self.last_statement = statement
         return self.scalar_result
 
 
@@ -154,6 +156,38 @@ def test_get_returns_scalar_result():
     )
 
     assert result is expected
+
+
+def test_hash_lookup_is_patient_scoped_across_sessions():
+    session = FakeSession()
+    repository = DiagnosticAttachmentRepository(session)
+    provider_id, patient_id = uuid4(), uuid4()
+
+    repository.get_by_sha256(
+        provider_id=provider_id,
+        patient_id=patient_id,
+        session_id="new-session",
+        sha256="c" * 64,
+    )
+
+    where_clause = str(session.last_statement.whereclause)
+    assert "patient_id" in where_clause
+    assert "sha256" in where_clause
+    assert "session_id" not in where_clause
+
+
+def test_unbound_hash_lookup_remains_session_scoped():
+    session = FakeSession()
+    repository = DiagnosticAttachmentRepository(session)
+
+    repository.get_by_sha256(
+        provider_id=uuid4(),
+        patient_id=None,
+        session_id="unbound-session",
+        sha256="d" * 64,
+    )
+
+    assert "session_id" in str(session.last_statement.whereclause)
 
 
 def test_bind_to_patient():

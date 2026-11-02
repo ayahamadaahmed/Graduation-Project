@@ -93,6 +93,25 @@ class DiagnosticAttachmentRepository:
             statement
         )
 
+    def get_by_sha256(
+        self,
+        *,
+        provider_id: UUID,
+        patient_id: UUID | None,
+        session_id: str,
+        sha256: str,
+    ) -> DiagnosticAttachment | None:
+        """Find an identical upload within its authorized chat scope."""
+        statement = select(DiagnosticAttachment).where(
+            DiagnosticAttachment.provider_id == provider_id,
+            DiagnosticAttachment.patient_id == patient_id,
+            DiagnosticAttachment.sha256 == sha256,
+        )
+        if patient_id is None:
+            statement = statement.where(DiagnosticAttachment.session_id == session_id)
+        statement = statement.limit(1)
+        return self.session.scalar(statement)
+
     # ========================================================
     # BIND TO PATIENT
     # ========================================================

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import logging
+import json
 from uuid import UUID
 from typing import Annotated
+
+from sqlalchemy import select
 
 from fastapi import (
     APIRouter,
@@ -15,9 +18,12 @@ from fastapi import (
 
 from app.api.dependencies import (
     CurrentProvider,
+    DatabaseSession,
     DiagnosticAttachmentServiceDependency,
     
 )
+from app.models.diagnostic_case import DiagnosticCase
+from app.schemas.diagnostic_case import DiagnosticCaseResponse, DiagnosticCaseSaveRequest
 
 from app.schemas.diagnostic_attachment import (
     DiagnosticAttachmentUploadResponse,
@@ -82,6 +88,81 @@ router = APIRouter(
     prefix="/diagnostics",
     tags=["diagnostics"],
 )
+
+
+@router.put("/cases/{session_id}", response_model=DiagnosticCaseResponse)
+def save_diagnostic_case(
+    session_id: str,
+    payload: DiagnosticCaseSaveRequest,
+    provider: CurrentProvider,
+    session: DatabaseSession,
+    binding_service: DiagnosticAttachmentBindingServiceDependency,
+) -> DiagnosticCaseResponse:
+    """Create/update a case under the authenticated tenant/provider."""
+    session_id = session_id.strip()
+    if not session_id or len(session_id) > 128:
+        raise HTTPException(status_code=400, detail="Invalid session_id.")
+    try:
+        binding = binding_service.resolve(
+            provider_id=provider.id,
+            patient_id=payload.patient_id,
+            encounter_id=payload.encounter_id,
+        )
+    except (
+        DiagnosticEncounterNotFoundError,
+        DiagnosticEncounterRequiresPatientError,
+        DiagnosticPatientNotFoundError,
+        DiagnosticPatientProviderMismatchError,
+    ) as exc:
+        raise HTTPException(status_code=404, detail="Patient or encounter was not found for this provider.") from exc
+
+    case = session.scalar(select(DiagnosticCase).where(
+        DiagnosticCase.provider_id == provider.id,
+        DiagnosticCase.session_id == session_id,
+    ))
+    if case is None:
+        case = DiagnosticCase(provider_id=provider.id, session_id=session_id)
+        session.add(case)
+    elif case.patient_id and binding.patient_id and case.patient_id != binding.patient_id:
+        raise HTTPException(status_code=409, detail="This chat session is already linked to another patient.")
+
+    if binding.patient_id is not None:
+        case.patient_id = binding.patient_id
+    if binding.encounter_id is not None:
+        case.encounter_id = binding.encounter_id
+    case.complaint = payload.complaint.strip()
+    case.answers_json = json.dumps(payload.answers, ensure_ascii=False)
+    case.summary_json = json.dumps(payload.summary.model_dump(mode="json"), ensure_ascii=False) if payload.summary is not None else None
+    case.status = "complete" if payload.summary is not None else "in_progress"
+    session.commit()
+    session.refresh(case)
+    return DiagnosticCaseResponse(
+        id=case.id, session_id=case.session_id, patient_id=case.patient_id,
+        encounter_id=case.encounter_id, complaint=case.complaint,
+        answers=json.loads(case.answers_json or "{}"),
+        summary=json.loads(case.summary_json) if case.summary_json else None,
+        status=case.status, created_at=case.created_at, updated_at=case.updated_at,
+    )
+
+
+@router.get("/cases", response_model=list[DiagnosticCaseResponse])
+def list_diagnostic_cases(
+    patient_id: UUID,
+    provider: CurrentProvider,
+    session: DatabaseSession,
+) -> list[DiagnosticCaseResponse]:
+    """List cases visible to this provider for a validated patient."""
+    statement = select(DiagnosticCase).where(
+        DiagnosticCase.provider_id == provider.id,
+        DiagnosticCase.patient_id == patient_id,
+    ).order_by(DiagnosticCase.created_at.desc()).limit(100)
+    return [DiagnosticCaseResponse(
+        id=case.id, session_id=case.session_id, patient_id=case.patient_id,
+        encounter_id=case.encounter_id, complaint=case.complaint,
+        answers=json.loads(case.answers_json or "{}"),
+        summary=json.loads(case.summary_json) if case.summary_json else None,
+        status=case.status, created_at=case.created_at, updated_at=case.updated_at,
+    ) for case in session.scalars(statement).all()]
 
 
 @router.post(

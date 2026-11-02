@@ -242,6 +242,7 @@ class FakeMedMindService:
     ):
         self.calls = []
         self.diagnostic_result = None
+        self.diagnostic_results = {}
 
     async def chat(
         self,
@@ -249,7 +250,10 @@ class FakeMedMindService:
         session_id,
         message,
         channel,
+        diagnostic_mode=None,
+        medical_education_hint=False,
         attachment_ids=None,
+        conversation_context=None,
         trusted_attachments=None,
     ):
 
@@ -264,14 +268,24 @@ class FakeMedMindService:
                 "channel":
                     channel,
 
+                "diagnostic_mode":
+                    diagnostic_mode,
+
+                "medical_education_hint":
+                    medical_education_hint,
+
                 "attachment_ids":
                     attachment_ids,
+
+                "conversation_context":
+                    conversation_context,
 
                 "trusted_attachments":
                     trusted_attachments,
             }
         )
 
+        attachment_id = attachment_ids[0] if attachment_ids else None
         return {
             "reply":
                 "ok",
@@ -283,7 +297,7 @@ class FakeMedMindService:
                 "unknown",
 
             "diagnostic_result":
-                self.diagnostic_result,
+                self.diagnostic_results.get(attachment_id, self.diagnostic_result),
 
             "state": {
                 "stage":
@@ -395,7 +409,7 @@ def make_client(
     medmind_service.radiology_persistence_adapter = (
         radiology_persistence_adapter
     )
-    
+
     app.dependency_overrides[
         get_radiology_persistence_adapter
     ] = lambda: (
@@ -913,6 +927,66 @@ def test_attachment_from_another_session_returns_404(
         == []
     )
 
+def test_patient_bound_attachment_can_be_reused_in_later_session(
+    monkeypatch,
+    tmp_path,
+):
+    attachment_id = "c" * 32
+    patient_id = uuid4()
+    attachment_service = FakeAttachmentService()
+    client, provider, medmind_service = make_client(
+        monkeypatch,
+        attachment_service=attachment_service,
+    )
+    path = tmp_path / "prior-upload.jpg"
+    path.write_bytes(b"previously stored image")
+    attachment_service.attachments[(provider.id, attachment_id)] = SimpleNamespace(
+        attachment_id=attachment_id,
+        provider_id=provider.id,
+        session_id="earlier-session",
+        original_filename="prior-upload.jpg",
+        content_type="image/jpeg",
+        patient_id=patient_id,
+        encounter_id=None,
+    )
+    attachment_service.paths[(provider.id, attachment_id)] = path
+    request_data = payload(session_id="new-session", attachment_id=attachment_id)
+    request_data["patient_id"] = str(patient_id)
+
+    response = client.post(
+        "/api/v1/ai/chat",
+        headers={"X-Tenant-ID": "clinic-001"},
+        json=request_data,
+    )
+
+    assert response.status_code == 200, response.text
+    assert medmind_service.calls[0]["trusted_attachments"][0].attachment_id == attachment_id
+
+
+def test_structured_follow_up_answers_reach_the_agent_as_patient_history(monkeypatch):
+    client, _, medmind_service = make_client(
+        monkeypatch,
+        attachment_service=FakeAttachmentService(),
+    )
+    request_data = payload()
+    request_data["form_answers"] = {
+        "symptoms": "صداع",
+        "onset": "منذ أيام",
+        "severity": 5,
+        "pattern": "تأتي وتختفي",
+    }
+
+    response = client.post(
+        "/api/v1/ai/chat",
+        headers={"X-Tenant-ID": "clinic-001"},
+        json=request_data,
+    )
+
+    assert response.status_code == 200, response.text
+    assert "Patient-provided structured symptom answers" in medmind_service.calls[0]["message"]
+    assert '"severity": 5' in medmind_service.calls[0]["message"]
+
+
 def test_radiology_result_is_persisted_from_chat(
     monkeypatch,
     tmp_path,
@@ -1095,7 +1169,7 @@ def test_radiology_result_is_persisted_from_chat(
             "pituitary"
         ]
         == Decimal("0.87")
-    ) 
+    )
 
 def test_pathology_result_is_persisted_from_chat(
     monkeypatch,
@@ -1399,4 +1473,69 @@ def test_pathology_result_is_persisted_from_chat(
     assert (
         rbc.mapping_status
         == "mapped"
-    )         
+    )
+
+
+def test_multiple_attachments_are_analyzed_individually(
+    monkeypatch,
+    tmp_path,
+):
+    attachment_service = FakeAttachmentService()
+    client, provider, medmind_service = make_client(
+        monkeypatch,
+        attachment_service=attachment_service,
+    )
+    attachment_ids = ["a" * 32, "b" * 32]
+    filenames = ["chest.jpg", "bloodwork.png"]
+    for attachment_id, filename in zip(attachment_ids, filenames):
+        path = tmp_path / filename
+        path.write_bytes(b"file-bytes")
+        attachment_service.attachments[(provider.id, attachment_id)] = SimpleNamespace(
+            attachment_id=attachment_id,
+            provider_id=provider.id,
+            session_id="session-1",
+            original_filename=filename,
+            content_type="image/jpeg" if filename.endswith(".jpg") else "image/png",
+            patient_id=None,
+            encounter_id=None,
+        )
+        attachment_service.paths[(provider.id, attachment_id)] = path
+
+    for attachment_id, classification in zip(attachment_ids, ["normal", "abnormal"]):
+        medmind_service.diagnostic_results[attachment_id] = {
+            "kind": "radiology",
+            "schema_version": "1.0",
+            "attachment_id": attachment_id,
+            "modality": "chest_xray",
+            "classification": classification,
+            "probabilities": {classification: 0.9, "other": 0.1},
+            "confidence": 0.9,
+            "inference_latency_ms": 100.0,
+            "model_name": "fake-radiology-model",
+            "model_version": "test",
+            "limitations": [],
+        }
+
+    request_data = payload(session_id="session-1")
+    request_data["diagnostic_mode"] = "auto_image"
+    request_data["attachment_ids"] = attachment_ids
+    response = client.post(
+        "/api/v1/ai/chat",
+        headers={"X-Tenant-ID": "clinic-001"},
+        json=request_data,
+    )
+
+    assert response.status_code == 200, response.text
+    assert len(medmind_service.calls) == 3
+    analysis_calls = medmind_service.calls[:2]
+    assert [call["trusted_attachments"][0].original_filename for call in analysis_calls] == filenames
+    assert len({call["session_id"] for call in analysis_calls}) == 2
+    assert all(len(call["trusted_attachments"]) == 1 for call in analysis_calls)
+    assert medmind_service.calls[2]["trusted_attachments"] is None
+    assert medmind_service.calls[2]["medical_education_hint"] is True
+    assert [item["filename"] for item in response.json()["diagnostic_file_replies"]] == filenames
+    persisted_ids = {
+        call["request"].attachment_id
+        for call in medmind_service.radiology_persistence_adapter.calls
+    }
+    assert persisted_ids == set(attachment_ids)

@@ -128,6 +128,8 @@ class FakeDiagnosticAgentClient:
 
             confidence=0.87,
 
+            score_semantics="class_probability",
+
             inference_latency_ms=150.0,
 
             model_name=(
@@ -649,4 +651,4 @@ async def test_diagnostic_safety_guard_blocks_critical_symptoms_before_client_ca
     assert (
         diagnostic_result["confirmation_field"]
         is None
-    )    
+    )

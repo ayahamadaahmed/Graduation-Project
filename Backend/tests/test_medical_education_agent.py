@@ -2,6 +2,19 @@ from medmind.medical_education_agent import (
     MedicalEducationAgent,
     MedicalEducationStatus,
 )
+from medmind.service import MedMindService
+
+
+def test_arabic_migraine_cause_question_routes_to_medical_education():
+    assert MedMindService._looks_like_medical_education_question(
+        message="انا قاديلى يومين بيجيلى صداع نصفى تفتكر ايه هى الاسباب اللى ممكن تكون عملالى كدا",
+    )
+
+
+def test_booking_question_does_not_route_to_medical_education():
+    assert not MedMindService._looks_like_medical_education_question(
+        message="عايزة احجز موعد بكرة",
+    )
 
 
 def test_medical_education_agent_answers_cbc_question(

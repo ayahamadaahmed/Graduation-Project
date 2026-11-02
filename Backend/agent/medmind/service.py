@@ -5554,6 +5554,20 @@ class MedMindService:
             "guidelines",
             "recommendation",
             "recommendations",
+            "سبب",
+            "السبب",
+            "الأسباب",
+            "الاسباب",
+            "ممكن يكون",
+            "ممكن تكون",
+            "عملالي",
+            "يسبب",
+            "causes",
+            "cause",
+            "caused by",
+            "what can cause",
+            "what could cause",
+            "why am i",
             "أحدث",
             "احدث",
             "آخر توصية",
@@ -5635,6 +5649,19 @@ class MedMindService:
             "ألم الصدر",
             "shortness of breath",
             "ضيق التنفس",
+            "صداع",
+            "الصداع",
+            "صداع نصفي",
+            "صداع نصفى",
+            "نصفي",
+            "نصفى",
+            "شقيقة",
+            "migraine",
+            "headache",
+            "أعراض",
+            "اعراض",
+            "symptom",
+            "symptoms",
         )
 
         has_question_style = any(
@@ -5822,6 +5849,7 @@ class MedMindService:
             list[TrustedDiagnosticAttachment]
             | None
         ) = None,
+        medical_education_hint: bool = False,
     ) -> dict:
 
         chat_started_at = (
@@ -6471,9 +6499,12 @@ class MedMindService:
                 state.stage.startswith("awaiting_")
                 and state.operation_type in ACTIVE_WRITE_OPERATIONS
             )
-            and self._looks_like_medical_education_question(
-                message=message,
-                history=session_history,
+            and (
+                medical_education_hint
+                or self._looks_like_medical_education_question(
+                    message=message,
+                    history=session_history,
+                )
             )
         ):
             selected_capability = None
@@ -7477,10 +7508,12 @@ class MedMindService:
 
             elif (
                 not trusted_attachments
-                and
-                self._looks_like_medical_education_question(
-                    message=message,
-                    history=session_history,
+                and (
+                    medical_education_hint
+                    or self._looks_like_medical_education_question(
+                        message=message,
+                        history=session_history,
+                    )
                 )
             ):
 

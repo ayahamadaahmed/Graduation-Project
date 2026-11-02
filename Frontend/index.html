@@ -10,9 +10,11 @@
     *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 92% 0,#e0f2ee 0,transparent 38%),#f3f7f7}
     .shell{max-width:1080px;margin:auto;padding:26px 20px 34px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}.brand{display:flex;align-items:center;gap:12px}.mark{display:grid;place-items:center;width:44px;height:44px;border-radius:15px;background:var(--deep);color:#fff;font-size:23px}.brand h1{font-size:19px;margin:0 0 3px}.brand p{font-size:12px;color:var(--muted);margin:0}.api-pill{font-size:12px;color:#256661;background:#e2f3ef;border:1px solid #c9e7df;padding:8px 12px;border-radius:99px;white-space:nowrap}
     .layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px;align-items:stretch}.panel,.chat{background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 12px 35px #123b4809}.panel{padding:20px}.panel h2{font-size:15px;margin:0 0 5px}.sub{font-size:12px;line-height:1.7;color:var(--muted);margin:0 0 20px}.field{margin:0 0 15px}.field label{display:block;font-size:12px;font-weight:650;margin-bottom:7px}.field input,.field select,.composer textarea{width:100%;border:1px solid var(--line);border-radius:11px;background:#fbfdfd;color:#182a3a;font:inherit;outline:none}.field input,.field select{height:40px;padding:0 11px}.field input:focus,.field select:focus,.composer textarea:focus{border-color:#69b7ac;box-shadow:0 0 0 3px #d8f0eb}.helper{font-size:11px;line-height:1.65;color:var(--muted);margin:6px 0 0}.divider{height:1px;background:var(--line);margin:18px 0}.safety{border-radius:12px;background:#fff8e9;color:#70551c;font-size:11px;line-height:1.75;padding:11px 12px}
-    .chat{min-height:680px;display:flex;flex-direction:column;overflow:hidden}.chat-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px}.chat-head h2{font-size:15px;margin:0 0 4px}.chat-head p{font-size:11px;color:var(--muted);margin:0}.new-session{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 11px;color:var(--deep);font:inherit;font-size:12px;cursor:pointer}.messages{flex:1;min-height:340px;max-height:55vh;overflow:auto;padding:22px;display:flex;flex-direction:column;gap:14px}.welcome{margin:auto;text-align:center;max-width:420px;color:var(--muted);line-height:1.8;font-size:13px}.welcome-icon{margin:0 auto 12px;width:48px;height:48px;display:grid;place-items:center;background:#eaf6f3;border-radius:16px;color:var(--teal);font-size:23px}.bubble{max-width:min(92%,860px);padding:14px 17px;border-radius:16px;font-size:13px;line-height:1.9;overflow-wrap:anywhere}.bubble.user{align-self:flex-start;background:#eaf5f3;border:1px solid #d9ebe7;border-bottom-right-radius:5px;white-space:pre-wrap}.bubble.assistant{align-self:flex-end;background:#f5f7fa;border:1px solid #e8edf1;border-bottom-left-radius:5px}.bubble .caption{font-size:10px;color:var(--muted);margin-bottom:7px}.bubble h3{font-size:14px;margin:15px 0 5px;color:var(--deep)}.bubble h3:first-child{margin-top:0}.bubble p{margin:5px 0}.bubble ul{margin:5px 0;padding-inline-start:22px}.bubble li{margin:3px 0}.bubble table{border-collapse:collapse;width:100%;margin:9px 0;display:block;overflow-x:auto;white-space:nowrap}.bubble th,.bubble td{border:1px solid var(--line);padding:6px 9px;text-align:start}.bubble th{background:#eaf3f2}.bubble img{display:block;max-width:220px;max-height:170px;object-fit:cover;border-radius:9px;margin-top:8px}.attachment-chip{display:inline-block;margin-top:8px;padding:6px 9px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--deep);font-size:11px}.composer{border-top:1px solid var(--line);padding:15px 18px 17px}.composer textarea{resize:vertical;min-height:74px;padding:11px 12px;font-size:13px}.compose-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}.file-pick{display:flex;align-items:center;gap:8px;min-width:0}.file-pick input{display:none}.file-button,.send{border:0;border-radius:11px;padding:10px 15px;font:inherit;font-size:12px;font-weight:650;cursor:pointer}.file-button{background:#eef4f4;color:var(--deep);white-space:nowrap}.file-name{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}.send{background:var(--teal);color:#fff;min-width:100px}.send:disabled{opacity:.55;cursor:wait}.notice{min-height:18px;margin-top:9px;color:var(--muted);font-size:11px}.notice.error{color:#b33434}.notice.ok{color:#247558}.meta{margin-top:6px;font-size:10px;color:var(--muted)}
+    .chat{min-height:680px;display:flex;flex-direction:column;overflow:hidden}.chat-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px}.chat-head h2{font-size:15px;margin:0 0 4px}.chat-head p{font-size:11px;color:var(--muted);margin:0}.new-session{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 11px;color:var(--deep);font:inherit;font-size:12px;cursor:pointer}.messages{flex:1;min-height:340px;max-height:55vh;overflow:auto;padding:22px;display:flex;flex-direction:column;gap:14px}.welcome{margin:auto;text-align:center;max-width:420px;color:var(--muted);line-height:1.8;font-size:13px}.welcome-icon{margin:0 auto 12px;width:48px;height:48px;display:grid;place-items:center;background:#eaf6f3;border-radius:16px;color:var(--teal);font-size:23px}.bubble{max-width:min(92%,860px);padding:14px 17px;border-radius:16px;font-size:13px;line-height:1.9;overflow-wrap:anywhere}.bubble.user{align-self:flex-start;background:#eaf5f3;border:1px solid #d9ebe7;border-bottom-right-radius:5px;white-space:pre-wrap}.bubble.assistant{align-self:flex-end;background:#f5f7fa;border:1px solid #e8edf1;border-bottom-left-radius:5px}.bubble .caption{font-size:10px;color:var(--muted);margin-bottom:7px}.bubble h3{font-size:14px;margin:15px 0 5px;color:var(--deep)}.bubble h3:first-child{margin-top:0}.bubble p{margin:5px 0}.bubble ul{margin:5px 0;padding-inline-start:22px}.bubble li{margin:3px 0}.bubble table{border-collapse:collapse;width:100%;margin:9px 0;display:block;overflow-x:auto;white-space:nowrap}.bubble th,.bubble td{border:1px solid var(--line);padding:6px 9px;text-align:start}.bubble th{background:#eaf3f2}.bubble img{display:block;max-width:220px;max-height:170px;object-fit:cover;border-radius:9px;margin-top:8px}.attachment-chip{display:inline-block;margin-top:8px;padding:6px 9px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--deep);font-size:11px}.attachment-chip button{border:0;background:transparent;color:#a33;font-size:16px;cursor:pointer;margin-inline-start:6px}.attachment-list{display:flex;flex-wrap:wrap;gap:6px}.question-form{align-self:flex-end;max-width:min(92%,860px);width:100%;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:#f8fbfb;display:grid;gap:10px}.question-form p{margin:0;font-size:12px;color:var(--muted);line-height:1.7}.question-form label{display:grid;gap:5px;font-size:12px}.question-form input,.question-form select{min-height:38px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:#fff;font:inherit}.question-form button{justify-self:start;border:0;border-radius:9px;padding:9px 13px;background:var(--teal);color:white;font:inherit;cursor:pointer}.composer{border-top:1px solid var(--line);padding:15px 18px 17px}.composer textarea{resize:vertical;min-height:74px;padding:11px 12px;font-size:13px}.compose-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}.file-pick{display:flex;align-items:center;gap:8px;min-width:0}.file-pick input{display:none}.file-button,.send{border:0;border-radius:11px;padding:10px 15px;font:inherit;font-size:12px;font-weight:650;cursor:pointer}.file-button{background:#eef4f4;color:var(--deep);white-space:nowrap}.file-name{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}.send{background:var(--teal);color:#fff;min-width:100px}.send:disabled{opacity:.55;cursor:wait}.notice{min-height:18px;margin-top:9px;color:var(--muted);font-size:11px}.notice.error{color:#b33434}.notice.ok{color:#247558}.meta{margin-top:6px;font-size:10px;color:var(--muted)}
     @media(max-width:780px){.shell{padding:16px 12px}.layout{grid-template-columns:1fr}.panel{padding:15px}.panel .fields{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}.panel .sub{margin-bottom:13px}.divider,.safety{display:none}.chat{min-height:65vh}.messages{max-height:48vh;padding:16px}.api-pill{display:none}}
     @media(max-width:480px){.panel .fields{grid-template-columns:1fr}.compose-bottom{align-items:stretch;flex-direction:column}.send{width:100%}.file-name{max-width:58vw}.bubble{max-width:92%}}
+    .report-card{align-self:stretch;max-width:100%;background:#fff;border:1px solid #dce7e7;border-radius:14px;padding:14px 16px;box-shadow:0 5px 18px #123b4808}.report-card h3{margin:0 0 8px;color:var(--deep);font-size:14px}.report-card .caption{font-size:10px;color:var(--muted);margin-bottom:5px}.report-card.final{border-color:#b7dcd4;background:#f7fcfa}
+    dialog{width:min(760px,calc(100vw - 24px));max-height:90vh;border:1px solid var(--line);border-radius:16px;padding:0;box-shadow:0 25px 80px #123b4840;color:#182a3a}dialog::backdrop{background:#102b3b88}.review{padding:20px}.review h2{margin:0 0 5px;font-size:17px}.review>p{margin:0 0 15px;color:var(--muted);font-size:12px}.review-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.review label{display:grid;gap:6px;font-size:12px;font-weight:650}.review label.wide{grid-column:1/-1}.review input,.review textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px;font:inherit;font-size:12px;resize:vertical}.review textarea{min-height:90px}.review-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}.review-actions button{border:0;border-radius:9px;padding:10px 14px;font:inherit;cursor:pointer}.review-actions .cancel{background:#eef4f4}.review-actions .confirm{background:var(--teal);color:#fff}
   </style>
 </head>
 <body>
@@ -34,17 +36,25 @@
         <div class="safety">النتائج المعروضة دعم مبدئي للمراجعة فقط، وليست تشخيصًا طبيًا نهائيًا.</div>
       </aside>
       <section class="chat" aria-label="Diagnostic chat">
-        <header class="chat-head"><div><h2>محادثة تحليل</h2><p id="sessionLabel"></p></div><button class="new-session" id="newSession" type="button">جلسة جديدة</button></header>
+        <header class="chat-head"><div><h2>محادثة تحليل</h2><p id="sessionLabel"></p></div><div><button class="new-session" id="saveCase" type="button">مراجعة التقرير</button> <button class="new-session" id="loadCases" type="button">السجل</button> <button class="new-session" id="newSession" type="button">جلسة جديدة</button></div></header>
         <div class="messages" id="messages" aria-live="polite"><div class="welcome" id="welcome"><div class="welcome-icon">✧</div><strong>ابدئي من هنا</strong><br>ارفعي صورة أو تقرير PDF لتحليله، أو اسألي سؤال متابعة من غير ما ترفعيه تاني.</div></div>
         <form class="composer" id="chatForm">
           <textarea id="message" maxlength="4000" required placeholder="مثال: اشرحيلي معنى النتيجة دي، أو اسألي عن عرض حسيتي بيه..."></textarea>
-          <div class="compose-bottom"><div class="file-pick"><label class="file-button" for="file">＋ Attachments</label><input id="file" type="file" accept="image/jpeg,image/png,application/pdf,.pdf"><span class="file-name" id="fileName">مفيش مرفقات</span></div><button class="send" id="send" type="submit">إرسال للمساعد ←</button></div>
+          <div class="compose-bottom"><div class="file-pick"><label class="file-button" for="file">＋ Attachments</label><input id="file" type="file" multiple accept="image/jpeg,image/png,application/pdf,.pdf"><span class="file-name" id="fileName">مفيش مرفقات</span></div><button class="send" id="send" type="submit">إرسال للمساعد ←</button></div>
+          <div id="attachmentList" class="attachment-list" aria-live="polite"></div>
           <div class="notice" id="notice" role="status"></div>
-          <div class="meta">المدعوم حاليًا: صور JPG وPNG، وتقارير تحاليل PDF حتى 12 صفحة (مرفق واحد في كل رسالة). ملفات الأشعة تُرفع كصورة JPG أو PNG.</div>
+          <div class="meta">المدعوم: صور JPG وPNG وملفات PDF. يمكنك اختيار عدة ملفات معًا أو لصق صورة من الـclipboard داخل مربع الرسالة.</div>
         </form>
       </section>
     </div>
   </main>
+  <dialog id="reviewDialog"><form class="review" id="reviewForm"><h2>راجعي وعدّلي التقرير</h2><p>التعديلات هنا لن تُحفظ إلا بعد الضغط على «حفظ في ملف المريض».</p><div class="review-grid">
+    <label class="wide">شكوى المريض<textarea id="reviewComplaint" maxlength="4000"></textarea></label>
+    <label class="wide">Findings — نتيجة منفصلة لكل سطر<textarea id="reviewFindings"></textarea></label>
+    <label class="wide">Observations<textarea id="reviewObservations"></textarea></label>
+    <label class="wide">Impression<textarea id="reviewImpression"></textarea></label>
+    <label class="wide">الارتباط والخطوة التالية<textarea id="reviewNextSteps"></textarea></label>
+  </div><div class="review-actions"><button class="cancel" id="cancelReview" type="button">رجوع للمحادثة</button><button class="confirm" type="submit">حفظ في ملف المريض</button></div></form></dialog>
   <script>
     (() => {
       const $ = (id) => document.getElementById(id);
@@ -77,6 +87,28 @@
         } catch { return []; }
       };
       let conversationContext = loadConversationContext();
+      let latestAssistantReply = [...conversationContext].reverse().find(item => item.role === "assistant")?.content || "";
+      let pendingFormAnswers = null;
+      let collectedFormAnswers = {};
+      let latestDiagnosticResults = [];
+      let selectedFiles = [];
+      const renderSelectedFiles = () => {
+        const list = $("attachmentList"); list.replaceChildren();
+        selectedFiles.forEach((file, index) => {
+          const item = document.createElement("span"); item.className = "attachment-chip";
+          item.textContent = `📎 ${file.name} (${Math.ceil(file.size / 1024)} KB) `;
+          const remove = document.createElement("button"); remove.type = "button"; remove.textContent = "×"; remove.setAttribute("aria-label", `حذف ${file.name}`);
+          remove.addEventListener("click", () => { selectedFiles.splice(index, 1); renderSelectedFiles(); });
+          item.append(remove); list.append(item);
+        });
+        $("fileName").textContent = selectedFiles.length ? `${selectedFiles.length} مرفق` : "مفيش مرفقات";
+      };
+      const addFiles = files => {
+        for (const file of files || []) {
+          if (!selectedFiles.some(existing => existing.name === file.name && existing.size === file.size && existing.lastModified === file.lastModified)) selectedFiles.push(file);
+        }
+        renderSelectedFiles();
+      };
       const updateSessionLabel = () => { $("sessionLabel").textContent = `رقم الجلسة: ${sessionId()}`; };
       const notice = (message, kind = "") => { const el = $("notice"); el.textContent = message; el.className = `notice ${kind}`; };
       const renderMarkdown = (container, source) => {
@@ -116,51 +148,169 @@
         if (role === "user" && attachmentName) { const file = document.createElement("div"); file.className = "attachment-chip"; file.textContent = `📎 ${attachmentName}`; bubble.append(file); }
         $("messages").append(bubble); $("messages").scrollTop = $("messages").scrollHeight;
       };
+      const addInteractionForm = spec => {
+        if (!spec || !Array.isArray(spec.questions) || !spec.questions.length) return;
+        const form = document.createElement("form"); form.className = "question-form";
+        const title = document.createElement("strong"); title.textContent = spec.title || "أسئلة متابعة"; form.append(title);
+        if (spec.description) { const description = document.createElement("p"); description.textContent = spec.description; form.append(description); }
+        const controls = new Map();
+        for (const question of spec.questions) {
+          if (!question || !/^[a-z0-9_]+$/i.test(question.id || "")) continue;
+          const label = document.createElement("label"); label.textContent = question.label || question.id;
+          let control;
+          if (question.type === "select" || question.type === "multi_select") {
+            control = document.createElement("select"); if (question.type === "multi_select") control.multiple = true;
+            const empty = document.createElement("option"); empty.value = ""; empty.textContent = "اختاري"; control.append(empty);
+            (question.options || []).forEach(value => { const option = document.createElement("option"); option.value = value; option.textContent = value; control.append(option); });
+          } else {
+            control = document.createElement("input"); control.type = question.type === "number" ? "number" : "text";
+            if (question.type === "number") control.step = "1";
+            if (Number.isFinite(question.minimum)) control.min = String(question.minimum);
+            if (Number.isFinite(question.maximum)) control.max = String(question.maximum);
+            if (question.type === "text") control.maxLength = 1000;
+          }
+          control.name = question.id; control.required = Boolean(question.required); controls.set(question.id, { control, type: question.type });
+          label.append(control); form.append(label);
+        }
+        const submit = document.createElement("button"); submit.type = "submit"; submit.textContent = "إرسال الإجابات للمساعد"; form.append(submit);
+        form.addEventListener("submit", event => {
+          event.preventDefault(); const answers = {};
+          for (const [id, entry] of controls) {
+            const value = entry.type === "multi_select" ? [...entry.control.selectedOptions].map(option => option.value).filter(Boolean) : entry.control.value.trim();
+            if (value !== "" && !(Array.isArray(value) && !value.length)) answers[id] = entry.type === "number" ? Number(value) : value;
+          }
+          pendingFormAnswers = answers; $("message").value = "إجاباتي على أسئلة المتابعة"; form.remove(); $("chatForm").requestSubmit();
+        });
+        $("messages").append(form); $("messages").scrollTop = $("messages").scrollHeight;
+      };
       const errorMessage = async (response) => {
         let data;
         try { data = await response.json(); } catch { return `حصل خطأ من السيرفر (${response.status}).`; }
         return data?.detail?.message || data?.detail?.code || data?.message || `حصل خطأ من السيرفر (${response.status}).`;
       };
-      $("file").addEventListener("change", () => {
-        const file = $("file").files[0];
-        $("fileName").textContent = file ? file.name : "مفيش مرفقات";
-        notice("");
+      const makeCaseSummary = () => {
+        const findings = [], observations = [], sources = [];
+        for (const entry of latestDiagnosticResults) {
+          const result = entry.result || entry; const filename = entry.filename || "ملف مرفق";
+          sources.push({ filename, attachment_id: entry.attachment_id || result.attachment_id || null });
+          if (result.kind === "radiology") {
+            findings.push({ filename, modality: result.modality || null, classification: result.classification || null, confidence: result.confidence ?? null, probabilities: result.probabilities || {} });
+            (result.limitations || []).forEach(value => observations.push(`${filename}: ${value}`));
+          } else if (result.kind === "pathology") {
+            for (const row of result.results || []) findings.push({ filename, name: row.canonical_name || row.raw_name || "نتيجة", value: row.value ?? null, unit: row.unit || null, reference: row.reference_text || null, flag: row.flag || "unknown", mapping_status: row.mapping_status || "unknown" });
+            (result.unreadable_fields || []).forEach(value => observations.push(`${filename}: تعذر قراءة ${value}`));
+          }
+        }
+        return {
+          patient_complaint: conversationContext.find(item => item.role === "user")?.content || "",
+          findings,
+          observations,
+          impression: latestAssistantReply,
+          next_steps: "",
+          limitations: ["مخرجات مساعدة للمراجعة وليست تشخيصًا طبيًا نهائيًا."],
+          sources
+        };
+      };
+      $("file").addEventListener("change", () => { addFiles($("file").files); $("file").value = ""; notice(""); });
+      $("message").addEventListener("paste", event => {
+        const files = [...(event.clipboardData?.items || [])].filter(item => item.kind === "file").map(item => item.getAsFile()).filter(Boolean);
+        if (files.length) { addFiles(files.map((file, i) => file.name === "image.png" ? new File([file], `clipboard-${Date.now()}-${i}.png`, { type: file.type }) : file)); notice("اتضافت ملفات الـclipboard كمرفقات.", "ok"); }
       });
       $("newSession").addEventListener("click", () => {
         sessionStorage.removeItem(historyKey());
         conversationContext = [];
+        latestAssistantReply = ""; pendingFormAnswers = null; collectedFormAnswers = {}; latestDiagnosticResults = [];
         sessionStorage.removeItem(sessionKey); updateSessionLabel(); $("messages").replaceChildren();
         const welcome = document.createElement("div"); welcome.className = "welcome"; welcome.id = "welcome";
         welcome.innerHTML = '<div class="welcome-icon">✧</div><strong>جلسة جديدة</strong><br>ارفعي صورة أو تقرير PDF لتحليله، أو اسألي سؤالًا طبيًا عامًا.';
         $("messages").append(welcome); notice("");
       });
+      const reviewDialog = $("reviewDialog");
+      $("saveCase").addEventListener("click", () => {
+        const tenant = $("tenant").value.trim(), patientId = $("patient").value.trim();
+        if (!patientId) { notice("أضيفي Patient ID عشان نربط الحالة بملف المريض.", "error"); return; }
+        if (!latestAssistantReply && !conversationContext.length) { notice("ابدئي المحادثة قبل الحفظ.", "error"); return; }
+        const summary = makeCaseSummary();
+        $("reviewComplaint").value = summary.patient_complaint;
+        $("reviewFindings").value = summary.findings.map(item => JSON.stringify(item, null, 2)).join("\n\n") || "لا توجد نتائج منظمة.";
+        $("reviewObservations").value = summary.observations.join("\n");
+        $("reviewImpression").value = latestAssistantReply;
+        $("reviewNextSteps").value = "راجعي الطبيب الذي طلب الفحوص لربط النتائج بالأعراض والتاريخ الصحي. لا تكفي النتائج وحدها لتشخيص نهائي.";
+        reviewDialog.showModal();
+      });
+      $("cancelReview").addEventListener("click", () => reviewDialog.close());
+      $("reviewForm").addEventListener("submit", async event => {
+        event.preventDefault();
+        const tenant = $("tenant").value.trim(), patientId = $("patient").value.trim();
+        try {
+          const summary = makeCaseSummary();
+          summary.patient_complaint = $("reviewComplaint").value.trim();
+          summary.findings = $("reviewFindings").value.split(/\n\s*\n|\n/).map(line => line.trim()).filter(Boolean).map(text => ({ text }));
+          summary.observations = $("reviewObservations").value.split("\n").map(line => line.trim()).filter(Boolean);
+          summary.impression = $("reviewImpression").value.trim();
+          summary.next_steps = $("reviewNextSteps").value.trim();
+          const response = await fetch(`${apiBase}/api/v1/diagnostics/cases/${encodeURIComponent(sessionId())}`, {
+            method: "PUT", headers: { "Content-Type": "application/json", "X-Tenant-ID": tenant },
+            body: JSON.stringify({
+              patient_id: patientId,
+              encounter_id: $("encounter").value.trim() || null,
+              complaint: summary.patient_complaint,
+              answers: { conversation: conversationContext, intake: collectedFormAnswers },
+              summary
+            })
+          });
+          if (!response.ok) throw new Error(await errorMessage(response));
+          reviewDialog.close();
+          notice("اتحفظت الحالة في ملف المريض.", "ok");
+        } catch (error) { notice(error instanceof TypeError ? "تعذر الوصول للـBackend. شغّلي Backend على 8000 ثم حدّثي الصفحة؛ لم يتم حفظ التعديلات." : (error.message || "تعذر حفظ الحالة."), "error"); }
+      });
+      $("loadCases").addEventListener("click", async () => {
+        const tenant = $("tenant").value.trim(), patientId = $("patient").value.trim();
+        if (!patientId) { notice("أضيفي Patient ID لعرض الحالات المحفوظة.", "error"); return; }
+        try {
+          const response = await fetch(`${apiBase}/api/v1/diagnostics/cases?patient_id=${encodeURIComponent(patientId)}`, { headers: { "X-Tenant-ID": tenant } });
+          if (!response.ok) throw new Error(await errorMessage(response));
+          const cases = await response.json();
+          if (!cases.length) { notice("مفيش حالات محفوظة للمريض ده عند الجهة الحالية.", "ok"); return; }
+          cases.forEach(item => {
+            const summary = item.summary || {};
+            const findings = (summary.findings || []).map(value => typeof value === "string" ? value : JSON.stringify(value)).join("\n- ");
+            const observations = (summary.observations || []).join("\n- ");
+            addBubble("assistant", `## ملخص محفوظ • ${new Date(item.created_at).toLocaleString("ar-EG")}\n\n### شكوى المريض\n${summary.patient_complaint || item.complaint || "غير مسجلة"}\n\n### Findings\n- ${findings || "لا توجد نتائج منظمة محفوظة."}\n\n### Observations\n- ${observations || "لا توجد ملاحظات إضافية."}\n\n### Impression\n${summary.impression || "الحالة محفوظة، ولسه مفيش ملخص نهائي."}`);
+          });
+          notice(`تم تحميل ${cases.length} حالة محفوظة.`, "ok");
+        } catch (error) { notice(error.message || "تعذر تحميل السجل.", "error"); }
+      });
       $("chatForm").addEventListener("submit", async (event) => {
         event.preventDefault();
-        const file = $("file").files[0];
+        const files = [...selectedFiles];
         const message = $("message").value.trim();
         const tenant = $("tenant").value.trim();
         if (!tenant) { notice("اكتبي Tenant ID الأول.", "error"); return; }
         if (!message) { notice("اكتبي رسالة للمساعد.", "error"); return; }
-        if (file && !["image/jpeg", "image/png", "application/pdf"].includes(file.type)) { notice("المسموح صورة JPG/PNG أو ملف PDF فقط حاليًا.", "error"); return; }
-        if (file && file.size > 10 * 1024 * 1024) { notice("حجم المرفق أكبر من 10 ميجابايت.", "error"); return; }
-        const button = $("send"); button.disabled = true; button.textContent = "جاري الإرسال…"; notice(file ? "جاري رفع المرفق وتجهيزه…" : "جاري إرسال سؤالك…");
-        const imageUrl = file && file.type.startsWith("image/") ? URL.createObjectURL(file) : null;
+        if (files.some(file => !["image/jpeg", "image/png", "application/pdf"].includes(file.type))) { notice("المسموح صور JPG/PNG أو ملفات PDF فقط.", "error"); return; }
+        if (files.some(file => file.size > 10 * 1024 * 1024)) { notice("فيه مرفق أكبر من 10 ميجابايت.", "error"); return; }
+        if (files.length > 10) { notice("الحد الأقصى 10 مرفقات في الرسالة.", "error"); return; }
+        const button = $("send"); button.disabled = true; button.textContent = "جاري الإرسال…"; notice(files.length ? `جاري رفع ${files.length} مرفق…` : "جاري إرسال سؤالك…");
+        const imageUrls = files.filter(file => file.type.startsWith("image/")).map(file => URL.createObjectURL(file));
         try {
-          let attachmentId;
-          if (file) {
+          const attachmentIds = [];
+          for (const file of files) {
             const upload = new FormData(); upload.append("session_id", sessionId()); upload.append("file", file);
             if ($("patient").value.trim()) upload.append("patient_id", $("patient").value.trim());
             if ($("encounter").value.trim()) upload.append("encounter_id", $("encounter").value.trim());
             const uploaded = await fetch(`${apiBase}/api/v1/diagnostics/attachments`, { method: "POST", headers: { "X-Tenant-ID": tenant }, body: upload });
             if (!uploaded.ok) throw new Error(await errorMessage(uploaded));
-            attachmentId = (await uploaded.json()).attachment_id;
+            attachmentIds.push((await uploaded.json()).attachment_id);
           }
           const chatPayload = {
             session_id: sessionId(), message, channel: "web",
-            attachment_ids: attachmentId ? [attachmentId] : [],
+            attachment_ids: attachmentIds,
             conversation_context: boundConversationContext(conversationContext)
           };
-          if (file) chatPayload.diagnostic_mode = "auto_image";
+          if ($("patient").value.trim()) chatPayload.patient_id = $("patient").value.trim();
+          if (pendingFormAnswers) chatPayload.form_answers = pendingFormAnswers;
+          if (files.length) chatPayload.diagnostic_mode = "auto_image";
           const response = await fetch(`${apiBase}/api/v1/ai/chat`, {
             method: "POST", headers: { "Content-Type": "application/json", "X-Tenant-ID": tenant },
             body: JSON.stringify(chatPayload)
@@ -168,21 +318,36 @@
           if (!response.ok) throw new Error(await errorMessage(response));
           const data = await response.json();
           const assistantReply = data.reply || "وصل رد فاضي من المساعد.";
-          addBubble("user", message, imageUrl, file?.name);
-          addBubble("assistant", assistantReply);
+          latestAssistantReply = assistantReply;
+          latestDiagnosticResults = data.diagnostic_results?.length ? data.diagnostic_results : (data.diagnostic_file_replies?.length ? data.diagnostic_file_replies : (data.diagnostic_result ? [{ filename: files[0]?.name || "مرفق", attachment_id: attachmentIds[0], result: data.diagnostic_result }] : []));
+          if (pendingFormAnswers) collectedFormAnswers = { ...collectedFormAnswers, ...pendingFormAnswers };
+          const contextUserMessage = pendingFormAnswers ? `${message}\nإجابات النموذج: ${JSON.stringify(pendingFormAnswers)}` : message;
+          addBubble("user", message, imageUrls[0] || null, files.map(file => file.name).join("، "));
+          if (data.diagnostic_file_replies?.length) {
+            data.diagnostic_file_replies.forEach(item => {
+              const card = document.createElement("article"); card.className = "report-card";
+              const title = document.createElement("h3"); title.textContent = item.filename || "نتيجة ملف";
+              const body = document.createElement("div"); renderMarkdown(body, item.reply || "لم ينتج تحليل لهذا الملف."); card.append(title, body); $("messages").append(card);
+            });
+            const finalCard = document.createElement("article"); finalCard.className = "report-card final";
+            const finalTitle = document.createElement("h3"); finalTitle.textContent = "ملخص الحالة والعلاقة بين النتائج والخطوة التالية";
+            const finalBody = document.createElement("div"); renderMarkdown(finalBody, assistantReply); finalCard.append(finalTitle, finalBody); $("messages").append(finalCard);
+          } else addBubble("assistant", assistantReply);
+          if (data.interaction_form) addInteractionForm(data.interaction_form);
           conversationContext = boundConversationContext([
             ...conversationContext,
-            { role: "user", content: message },
+            { role: "user", content: contextUserMessage },
             { role: "assistant", content: assistantReply }
           ]);
           try { sessionStorage.setItem(historyKey(), JSON.stringify(conversationContext)); } catch {}
-          $("message").value = ""; $("file").value = ""; $("fileName").textContent = "مفيش مرفقات";
+          $("message").value = ""; selectedFiles = []; renderSelectedFiles();
+          pendingFormAnswers = null;
           notice(`اكتمل الطلب${data.route ? ` • المسار: ${data.route}` : ""}`, "ok");
         } catch (error) {
-          notice(error.message || "تعذر الاتصال بالـ Backend. تأكدي أن الخدمة تعمل وأن إعداداتها مكتملة.", "error");
+          notice(error instanceof TypeError ? "تعذر الوصول للـBackend. شغّلي Backend على 8000 وتأكدي أن الصفحة تستخدم العنوان الصحيح." : (error.message || "تعذر الاتصال بالـBackend. تأكدي أن الخدمة تعمل وأن إعداداتها مكتملة."), "error");
         } finally {
           button.disabled = false; button.textContent = "إرسال للمساعد ←";
-          if (imageUrl && $("file").files[0]) URL.revokeObjectURL(imageUrl);
+          imageUrls.slice(1).forEach(URL.revokeObjectURL);
         }
       });
       updateSessionLabel();

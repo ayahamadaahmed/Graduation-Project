@@ -5,6 +5,25 @@ from pydantic import (
 )
 
 from typing import Literal
+from typing import Any
+from uuid import UUID
+
+
+class DiagnosticFormQuestion(BaseModel):
+    id: str
+    label: str
+    type: Literal["text", "number", "select", "multi_select"]
+    required: bool = False
+    options: list[str] = Field(default_factory=list)
+    minimum: int | None = None
+    maximum: int | None = None
+
+
+class DiagnosticInteractionForm(BaseModel):
+    id: str
+    title: str
+    description: str
+    questions: list[DiagnosticFormQuestion]
 
 class AIChatContextMessage(BaseModel):
 
@@ -22,6 +41,8 @@ class AIChatRequest(BaseModel):
         min_length=1,
         max_length=128,
     )
+
+    patient_id: UUID | None = None
 
     message: str = Field(
         min_length=1,
@@ -48,6 +69,8 @@ class AIChatRequest(BaseModel):
         max_length=24,
     )
 
+    form_answers: dict[str, Any] = Field(default_factory=dict)
+
     @field_validator("conversation_context")
     @classmethod
     def validate_conversation_context(
@@ -57,6 +80,28 @@ class AIChatRequest(BaseModel):
         total_chars = sum(len(item.content) for item in values)
         if total_chars > 60000:
             raise ValueError("conversation_context is too large.")
+        return values
+
+    @field_validator("form_answers")
+    @classmethod
+    def validate_form_answers(cls, values: dict[str, Any]) -> dict[str, Any]:
+        allowed = {"symptoms", "onset", "severity", "pattern"}
+        if not set(values).issubset(allowed):
+            raise ValueError("form_answers contains an unsupported field.")
+        if sum(len(str(value)) for value in values.values()) > 4000:
+            raise ValueError("form_answers is too large.")
+        if "symptoms" in values and not isinstance(values["symptoms"], str):
+            raise ValueError("symptoms must be text.")
+        if "onset" in values and values["onset"] not in {"اليوم", "منذ أيام", "منذ أسابيع", "منذ أشهر", "غير متأكد"}:
+            raise ValueError("onset has an unsupported option.")
+        if "pattern" in values and values["pattern"] not in {"تتحسن", "ثابتة", "تزداد", "تأتي وتختفي", "غير متأكد"}:
+            raise ValueError("pattern has an unsupported option.")
+        if "severity" in values and (
+            isinstance(values["severity"], bool)
+            or not isinstance(values["severity"], int)
+            or not 0 <= values["severity"] <= 10
+        ):
+            raise ValueError("severity must be an integer from 0 to 10.")
         return values
 
     @field_validator(
@@ -87,6 +132,9 @@ class AIChatRequest(BaseModel):
         values: list[str],
     ) -> list[str]:
 
+        if len(values) > 10:
+            raise ValueError("At most 10 attachments are allowed per message.")
+
         normalized: list[str] = []
 
         for value in values:
@@ -111,6 +159,14 @@ class AIChatResponse(BaseModel):
     session_id: str
 
     reply: str
+
+    interaction_form: DiagnosticInteractionForm | None = None
+
+    diagnostic_result: dict[str, Any] | None = None
+
+    diagnostic_results: list[dict[str, Any]] = Field(default_factory=list)
+
+    diagnostic_file_replies: list[dict[str, Any]] = Field(default_factory=list)
 
     stage: str
 
